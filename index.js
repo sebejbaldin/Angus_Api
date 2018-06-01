@@ -24,32 +24,6 @@ app.use('/try', (req, res) => {
     dbinflux.tryQueryGen(res);
 })
 
-/* app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/page/index.html');
-});
-
-app.get('/main.js', (req, res) => {
-    res.sendFile(__dirname + '/page/main.js');
-});
-
-app.get('/jquery.js', (req, res) => {
-    res.sendFile(__dirname + '/node_modules/jquery/dist/jquery.min.js');
-});
-
-app.get('/bootstrap.min.css', (req, res) => {
-    res.sendFile(__dirname + '/node_modules/bootstrap/dist/css/bootstrap.min.css');
-}); */
-
-/*  
-    Ogni componente elettrico (motore, pompa,
-    ventilatore) ha alcuni sensori che raccolgono
-    ogni secondo i dati di:
-
-    corrente assorbita
-    numero di giri
-    ore lavoro 
-*/
-
 //api con post per l'inserimento di nuovi dati da parte dei sensori
 app.post('/api/insert', (req, res) => {
     if (req.body != null) {
