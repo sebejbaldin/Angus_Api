@@ -53,7 +53,7 @@ app.get('/bootstrap.min.css', (req, res) => {
 app.post('/api/insert', (req, res) => {
     if (req.body != null) {
         let measure = req.body;
-        dbinflux.insertToDBwithPOST(io, res, measure);
+        //dbinflux.insertToDBwithPOST(io, res, measure);
     } else {
         res.end('No data received.');
     }
@@ -66,7 +66,7 @@ app.post('/api/insert', (req, res) => {
 io.on('connection', (socket) => {
     userConnected++;
     console.log('Users: ' + userConnected);
-    dbinflux.getEnergySumLastMinute(socket);
+    dbinflux.getEnergySumLastMinuteForSens(socket);
     socket.on('disconnect', () => {
         userConnected--;
         console.log('A user disconnected\nRemaining users: ' + userConnected);

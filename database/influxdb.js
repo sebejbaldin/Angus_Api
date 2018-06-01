@@ -37,7 +37,7 @@ module.exports = {
                 try {
                     resultMy.forEach(element => {
                         let idSens = element.id;
-                        result[0].series.forEach(item => {
+                        result.forEach(item => {
                             if(item.tag_sensor_id == idSens) {
                                 sum += item.sum;
                             }
@@ -74,13 +74,13 @@ module.exports = {
             .then(result => {
                 let obj = [];
                 try {
-                    result[0].series.forEach(element => {
-                        let idSens = parseInt(element.tags.tag_sensor_id);
-                        resultMy.forEach(item => {
-                            if(item.id === idSens) {
+                    resultMy.forEach(element => {
+                        let idSens = element.id;
+                        result.forEach(item => {
+                            if(item.tag_sensor_id == idSens) {
                                 obj.push({
-                                    name: item.name,
-                                    value: element.values[0][1]
+                                    name: element.name,
+                                    value: item.sum
                                 });
                             }
                         })
@@ -177,47 +177,37 @@ module.exports = {
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-            else
-                console.log(resultMy);
+                else
+            console.log(resultMy);
             influx
             .query(`select sum(value) 
             from (select * from testdata group by tag_sensor_id )
             where time > now() - 1m group by tag_sensor_id`)
             .then(result => {
-                let obj = {descr: 'globalSumLastMinute'};
-                let sum = 0;
+                let obj = [];
                 try {
                     resultMy.forEach(element => {
                         let idSens = element.id;
                         result.forEach(item => {
-                            if(parseInt(item.tag_sensor_id) === idSens) {
-                                sum += item.sum;
+                            if(item.tag_sensor_id == idSens) {
+                                obj.push({
+                                    name: element.name,
+                                    value: item.sum
+                                });
                             }
                         })
                     });
-                    obj.sum = sum;
                     console.log(obj);
-                    res.json(obj)
+                    res.json(obj);
                 } catch(e) {
-                    res.end(e.stack);
+                    res.json({err: 'NoData'});
                 }
             })
             .catch(err => {
                 console.log(err.stack);
             })
+            
         });
         conn.end();
     }
-}
-
-module.exports.queryDatabase = (res) => {
-    influx
-    .query(`select sum(value) 
-        from (select * from testdata group by tag_sensor_id  limit 60) 
-        group by tag_sensor_id`)
-    .then(result => {
-        res.json(result)
-    }).catch(err => {
-        res.status(500).send(err.stack)
-    })
 }
