@@ -1,6 +1,6 @@
 const Influx = require('influx');
 const mysql = require('mysql');
-
+//file di configurazione
 const configMSSQL = {
     host: '192.168.101.63',
     port: 3306,
@@ -14,24 +14,31 @@ const influx = new Influx.InfluxDB({
     port: 8086,
     database: 'Angus_v1'
 });
-
+//in questo modo exporto un oggetto contenente tutte le funzioni che mi servono
+//commento solo la prima funzione, visto che le altre sono praticamente uguali
+//al massimo cambia il modo di aggregare i dati e le query
 module.exports = {
     getGlobalEnergySumLM: (io) => {
+        //funzione che ritorna il consumo globale dei componenti elettrici nell'ultimo minuto
         var conn = mysql.createConnection(configMSSQL);
-
+        //faccio la connessione a mysql e recupero la lista di macchine che hanno i sensori di corrente elettrica
         conn.connect();
         conn.query(`select m.name, s.id, s.type from machines m 
         join sensors s on s.machine_id=m.id 
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-                else
-            console.log(resultMy);
+                //else
+            //console.log(resultMy);
+            //all'interno della funzione di callback
+            //(che viene chiamata quando i dati della prima query sono pronti)
+            //chiamo i dati anche da influx
             influx
             .query(`select sum(value) 
             from (select * from testdata group by tag_sensor_id )
             where time > now() - 1m group by tag_sensor_id`)
             .then(result => {
+                //ricevuti i dati anche da influx li combino come richiesto e compongo l'oggetto da inviare
                 let obj = {descr: 'globalSumLastMinute'};
                 let sum = 0;
                 try {
@@ -45,6 +52,7 @@ module.exports = {
                     });
                     obj.sum = sum;
                     console.log(obj);
+                    //emetto tramite socket.io il dato ai client connessi
                     io.emit('sumLastMin', obj);
                 } catch(e) {
                     io.emit('sumLastMin', {err: 'NoData'});
@@ -65,8 +73,8 @@ module.exports = {
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-                else
-            console.log(resultMy);
+                //else
+            //console.log(resultMy);
             influx
             .query(`select sum(value) 
             from (select * from testdata group by tag_sensor_id )
@@ -107,8 +115,8 @@ module.exports = {
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-            else 
-                console.log(resultMy);
+            //else 
+                //console.log(resultMy);
             influx
             .query(`select * from testdata group by tag_sensor_id order by time desc limit 1`)
             .then(result => {
@@ -124,6 +132,7 @@ module.exports = {
                         }
                     })
                 });
+                console.log(obj);
                 io.emit('insECons', obj);
             }).catch(err => {
                 console.log(err.stack);
