@@ -6,7 +6,7 @@ var userConnected = 0;
 
 const app = express();
 
-const dbinflux = require('./database/influxdb');
+const dbmanager = require('./database/dbcon');
 
 const Class = require('./classes');
 
@@ -21,21 +21,21 @@ app.use(bodyParser.json());
 app.use('/api/auth', authController);
 //pagina di prova per visualizzare i json, con firefox è meglio
 app.use('/try', (req, res) => {
-    dbinflux.tryQueryGen(res);
+    //dbmanager.tryQueryGen(res);
+    dbmanager.insertMeasurement(res, {});
 })
 
 //api con post per l'inserimento di nuovi dati da parte dei sensori
-app.post('/api/insert', (req, res) => {
+app.post('/api/measure', (req, res) => {
     if (req.body != null) {
-        let measure = req.body;
-        //dbinflux.insertToDBwithPOST(io, res, measure);
+        dbmanager.insertMeasurement(res, req.body);
     } else {
         res.end('No data received.');
     }
 });
 
 setInterval(() => {
-    dbinflux.getEnergySumLastMinuteForSens(io);
+    //dbmanager.getEnergySumLastMinuteForSens(io);
 }, 15000); 
 
 //gestione degli utenti che si connettono a socket.io
@@ -44,7 +44,7 @@ io.on('connection', (socket) => {
     console.log('Users: ' + userConnected);
     //quando un nuovo utente si connette gli invia subito i dati che servono al client, 
     //che sono ancora da definire bene
-    dbinflux.getEnergySumLastMinuteForSens(socket);
+    dbmanager.getEnergySumLastMinuteForSens(socket);
     socket.on('disconnect', () => {
         userConnected--;
         console.log('A user disconnected\nRemaining users: ' + userConnected);
