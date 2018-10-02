@@ -2,15 +2,15 @@ const Influx = require('influx');
 const mysql = require('mysql');
 //file di configurazione
 const configMSSQL = {
-    host: '192.168.101.63',
+    host: 'localhost',
     port: 3306,
     user: 'piedpiper',
-    password: 'PiedPiper2018',
+    password: 'piedpiper',
     database: 'db_piedpiper'
 };
 
 const influx = new Influx.InfluxDB({
-    host: '192.168.101.81',
+    host: '192.168.101.110',
     port: 8086,
     database: 'Angus_v1'
 });

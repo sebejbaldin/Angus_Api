@@ -20,10 +20,10 @@ app.use(bodyParser.json());
 //aggiunta dell'autenticazione
 app.use('/api/auth', authController);
 //pagina di prova per visualizzare i json, con firefox è meglio
-app.use('/try', (req, res) => {
+app.post('/try', (req, res) => {
     //dbmanager.tryQueryGen(res);
     dbmanager.insertMeasurement(res, {});
-})
+});
 
 //api con post per l'inserimento di nuovi dati da parte dei sensori
 app.post('/api/measure', (req, res) => {
@@ -34,9 +34,13 @@ app.post('/api/measure', (req, res) => {
     }
 });
 
+app.get('/api/lastminute', (req, res) => {
+    dbmanager.tryQueryGen(res);
+});
+
 setInterval(() => {
     //dbmanager.getEnergySumLastMinuteForSens(io);
-}, 15000); 
+}, 15000);
 
 //gestione degli utenti che si connettono a socket.io
 io.on('connection', (socket) => {
@@ -50,12 +54,14 @@ io.on('connection', (socket) => {
         console.log('A user disconnected\nRemaining users: ' + userConnected);
     });
 });
+
 //se la pagina richiesta non viene catturata da uno dei precedenti get la cattura questo che notifica il 404
 app.get('/*', (req, res) => {
     res
     .status(404)
     .end('Errore 404, pagina non trovata.')
-})
+});
+
 //metto il server in ascolto
 const port = 8081;
 server.listen(port, () => {
