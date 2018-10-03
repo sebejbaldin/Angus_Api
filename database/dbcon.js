@@ -14,32 +14,31 @@ const influx = new Influx.InfluxDB({
     port: 8086,
     database: 'Angus_v1'
 });
-//in questo modo exporto un oggetto contenente tutte le funzioni che mi servono
-//commento solo la prima funzione, visto che le altre sono praticamente uguali
-//al massimo cambia il modo di aggregare i dati e le query
+
+// this object contains all functions that interact with the database
 module.exports = {
     getGlobalEnergySumLM: (io) => {
-        //funzione che ritorna il consumo globale dei componenti elettrici nell'ultimo minuto
-        var conn = mysql.createConnection(configMSSQL);
-        //faccio la connessione a mysql e recupero la lista di macchine che hanno i sensori di corrente elettrica
+        // this function returns the global energy consumed in the last minute
+        let conn = mysql.createConnection(configMSSQL);
         conn.connect();
+        // with this query i get the list of machines that have the energy drain sensor
         conn.query(`select m.name, s.id, s.type from machines m 
         join sensors s on s.machine_id=m.id 
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-                //else
-            //console.log(resultMy);
-            //all'interno della funzione di callback
-            //(che viene chiamata quando i dati della prima query sono pronti)
-            //chiamo i dati anche da influx
+            
+            // after i have received correctly the data of the machines i query the influxdb
+            // for the measurement data
             influx
             .query(`select sum(value) 
             from (select * from testdata group by tag_sensor_id )
             where time > now() - 1m group by tag_sensor_id`)
             .then(result => {
-                //ricevuti i dati anche da influx li combino come richiesto e compongo l'oggetto da inviare
-                let obj = {descr: 'globalSumLastMinute'};
+                // received correctly the data this ones will be processed to return the data as expected
+                let obj = { 
+                    descr: 'globalSumLastMinute'
+                };
                 let sum = 0;
                 try {
                     resultMy.forEach(element => {
@@ -52,7 +51,7 @@ module.exports = {
                     });
                     obj.sum = sum;
                     console.log(obj);
-                    //emetto tramite socket.io il dato ai client connessi
+                    // the data is now transmitted to all the client connected
                     io.emit('sumLastMin', obj);
                 } catch(e) {
                     io.emit('sumLastMin', {err: 'NoData'});
@@ -65,7 +64,7 @@ module.exports = {
         conn.end();
     },
     getEnergySumLastMinuteForSens: (io) => {
-        var conn = mysql.createConnection(configMSSQL);
+        let conn = mysql.createConnection(configMSSQL);
 
         conn.connect();
         conn.query(`select m.name, s.id, s.type from machines m 
@@ -107,7 +106,7 @@ module.exports = {
         conn.end();
     },
     getInstantForMachine: (io) => {
-        var conn = mysql.createConnection(configMSSQL);
+        let conn = mysql.createConnection(configMSSQL);
 
         conn.connect();
         conn.query(`select m.name, s.id, s.type from machines m 
@@ -115,8 +114,7 @@ module.exports = {
         where s.type='corrente assorbita'`, function (err, resultMy, fields) {
             if(err)
                 console.log(err);
-            //else 
-                //console.log(resultMy);
+            
             influx
             .query(`select * from testdata group by tag_sensor_id order by time desc limit 1`)
             .then(result => {
@@ -141,23 +139,23 @@ module.exports = {
         conn.end();
     },
     tryQueryInflux: (res) => {
-        const query = `select sum(value) 
+        let query = `select sum(value) 
         from (select * from testdata group by tag_sensor_id )
         where time > now() - 1m group by tag_sensor_id`;
         influx
-            .query(query)
-            .then(result => {
-                let obj = {
-                    query: query,
-                    results: result
-                }
-                res.json(obj);
-            }).catch(err => {
-                console.log(err.stack);
-            })
+        .query(query)
+        .then(result => {
+            let obj = {
+                query: query,
+                results: result
+            }
+            res.json(obj);
+        }).catch(err => {
+            console.log(err.stack);
+        });
     },
     tryQueryMySQL: (res) => {
-        var conn = mysql.createConnection(configMSSQL);
+        let conn = mysql.createConnection(configMSSQL);
         const query = `select m.name, s.id, s.type from machines m 
         join sensors s on s.machine_id=m.id 
         where s.type='corrente assorbita'`;
@@ -178,7 +176,7 @@ module.exports = {
         conn.end();
     },
     tryQueryGen: (res) => {
-        var conn = mysql.createConnection(configMSSQL);
+        let conn = mysql.createConnection(configMSSQL);
 
         conn.connect();
         conn.query(`select m.name, s.id, s.type from machines m 
@@ -214,19 +212,16 @@ module.exports = {
             })
             .catch(err => {
                 console.log(err.stack);
-            })
-            
+            });            
         });
         conn.end();
     },
     insertMeasurement: (res, data) => {
         //insert testdata,tag_id=1,tag_sensor_id=13 id=1,sensor_id=13,value=100
-        influx.writeMeasurement('testdata', [
-            {
+        influx.writeMeasurement('testdata', [{
                 tags: { tag_id: data.id, tag_sensor_id: data.sensor_id },
                 fields: { id: data.id, sensor_id: data.sensor_id, value: data.value }
-            }
-        ]);
+            }]);
         res.end('Inserted');
     }
 }
