@@ -10,7 +10,7 @@ const configMSSQL = {
 };
 
 const influx = new Influx.InfluxDB({
-    host: '192.168.101.110',
+    host: '192.168.101.81',
     port: 8086,
     database: 'Angus_v1'
 });

@@ -18,19 +18,17 @@ app.use(bodyParser.json());
 app.use('/api/auth', authController);
 
 // middleware that check if the user is authenticated
+// if the user isn't authenticated it block the request, otherwise let the request to be processed
 app.use((req, res, next) => {
     verifyToken(req, res, next);
 });
 
-//const Class = require('./classes');
-
-//pagina di prova per visualizzare i json, con firefox è meglio
-app.post('/try', (req, res) => {
+/* app.post('/try', (req, res) => {
     //dbmanager.tryQueryGen(res);
     dbmanager.insertMeasurement(res, {});
-});
+}); */
 
-//api con post per l'inserimento di nuovi dati da parte dei sensori
+// post api to insert new measurements
 app.post('/api/measure', (req, res) => {
     if (req.body != null) {
         dbmanager.insertMeasurement(res, req.body);
@@ -43,16 +41,15 @@ app.get('/api/lastminute', (req, res) => {
     dbmanager.tryQueryGen(res);
 });
 
-setInterval(() => {
+/* setInterval(() => {
     //dbmanager.getEnergySumLastMinuteForSens(io);
-}, 15000);
+}, 15000); */
 
-//gestione degli utenti che si connettono a socket.io
+// socket.io body
 io.on('connection', (socket) => {
     userConnected++;
     console.log('Users: ' + userConnected);
-    //quando un nuovo utente si connette gli invia subito i dati che servono al client, 
-    //che sono ancora da definire bene
+    
     dbmanager.getEnergySumLastMinuteForSens(socket);
     socket.on('disconnect', () => {
         userConnected--;
@@ -60,14 +57,14 @@ io.on('connection', (socket) => {
     });
 });
 
-//se la pagina richiesta non viene catturata da uno dei precedenti get la cattura questo che notifica il 404
+// if the request haven't been captured yet, it return a 404 status to the request
 app.get('/*', (req, res) => {
     res
     .status(404)
     .end('Error 404, page not found.');
 });
 
-//metto il server in ascolto
+// server listening
 const port = 8081;
 server.listen(port, () => {
     console.log("Click me: http://localhost:" + port);
