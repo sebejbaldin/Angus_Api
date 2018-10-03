@@ -228,5 +228,52 @@ module.exports = {
             }
         ]);
         res.end('Inserted');
+    },
+    getAsyncQueryGen: async () => {
+        let conn = mysql.createConnection(configMSSQL);
+
+        conn.connect();
+        let mysqlRes = await conn.query(`select m.name, s.id, s.type from machines m 
+        join sensors s on s.machine_id=m.id 
+        where s.type='corrente assorbita'`, function (err, resultMy, fields) {
+            conn.end();
+            
+            if(err) {
+                console.log(err);
+                throw err;                
+            }
+            
+            return resultMy;            
+        });
+        let influxRes = await influx
+        .query(`select sum(value) 
+        from (select * from testdata group by tag_sensor_id )
+        where time > now() - 1m group by tag_sensor_id`)
+        .then((result) => {
+            return result;
+        })
+        .catch(err => {
+            console.log(err.stack);
+            throw err;
+        });
+
+        let obj = [];
+        try {
+            mysqlRes.forEach(element => {
+                let idSens = element.id;
+                influxRes.forEach(item => {
+                    if(item.tag_sensor_id == idSens) {
+                        obj.push({
+                            name: element.name,
+                            value: item.sum
+                        });
+                    }
+                })
+            });
+            console.log(obj);
+            return obj;
+        } catch(e) {
+            return {err: 'NoData'};
+        }            
     }
 }
