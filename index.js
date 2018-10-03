@@ -1,24 +1,29 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-//var che monitora il numero di utenti connessi con socket.io
-var userConnected = 0;
-
 const app = express();
-
-const dbmanager = require('./database/dbcon');
-
-const Class = require('./classes');
-
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
-var authController = require('./auth/authController');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const dbmanager = require('./database/dbcon');
+const authController = require('./auth/authController');
+const verifyToken = require('./auth/verifyToken');
+
+//represent the number of client connected with socket.io
+var userConnected = 0;
 
 app.use(cors());
 app.use(bodyParser.json());
-//aggiunta dell'autenticazione
+// Added authentication with jwt
 app.use('/api/auth', authController);
+
+// middleware that check if the user is authenticated
+app.use((req, res, next) => {
+    verifyToken(req, res, next);
+});
+
+//const Class = require('./classes');
+
 //pagina di prova per visualizzare i json, con firefox è meglio
 app.post('/try', (req, res) => {
     //dbmanager.tryQueryGen(res);
@@ -59,7 +64,7 @@ io.on('connection', (socket) => {
 app.get('/*', (req, res) => {
     res
     .status(404)
-    .end('Errore 404, pagina non trovata.')
+    .end('Error 404, page not found.');
 });
 
 //metto il server in ascolto
