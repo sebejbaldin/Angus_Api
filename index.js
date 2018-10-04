@@ -37,13 +37,23 @@ app.post('/api/measure', (req, res) => {
     }
 });
 
-app.get('/api/lastminute', async (req, res) => {
-    let obj = dbmanager.getAsyncQueryGen();
+app.get('/api/try', async (req, res) => {
+    let obj = await dbmanager.getAsyncQueryGen();
     console.log(obj);
     if (obj != undefined)
-        res.status(200).send(obj);
+        res
+        .status(200)
+        .send(obj);
     else
-        res.status(500).send(obj);
+        res
+        .status(500)
+        .send(obj);
+});
+
+app.get('/api/lastminute', async (req, res) => {
+    res
+    .status(200)
+    .send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
 /* setInterval(() => {
