@@ -1,6 +1,6 @@
 const Influx = require('influx');
 const mysql = require('mysql');
-//file di configurazione
+// database configuration
 const configMSSQL = {
     host: 'localhost',
     port: 3306,
@@ -16,11 +16,9 @@ const influx = new Influx.InfluxDB({
 });
 
 var conn = mysql.createConnection(configMSSQL);
-//in questo modo exporto un oggetto contenente tutte le funzioni che mi servono
-//commento solo la prima funzione, visto che le altre sono praticamente uguali
-//al massimo cambia il modo di aggregare i dati e le query
 
 exports.getGlobalEnergySumLM = async () => {
+    // for the details of these 2 function please refer on the implementation
     let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
     where s.type='corrente assorbita'`);
@@ -29,8 +27,9 @@ exports.getGlobalEnergySumLM = async () => {
     from (select * from testdata group by tag_sensor_id )
     where time > now() - 1m group by tag_sensor_id`);
 
+    // the data are being processed after have being received from the database 
     let obj = {
-        descr: 'globalSumLastMinute'
+        descr: 'globalEnergySumLastMinute'
     };
     let sum = 0;
     try {
@@ -152,14 +151,18 @@ exports.insertMeasurement = (res, data) => {
     res.end('Inserted');
 };
 
+// this function executes all the query on the mysql database
 async function ReadQueryMySQL(query) {
+    // inizialized the container of the result
     let mysqlRes = [];
-    //let conn = mysql.createConnection(configMSSQL);
+    // connect to the database
     conn.connect();
+    // the query is beign processed    
     await conn.query(query, (err, resultMy, fields) => {
         conn.end();
-        
+        // after have received response the connection is being closed        
         console.log(resultMy);
+        // the data are being inserted
         resultMy.forEach(x => {
             mysqlRes.push(x);
         });
@@ -167,18 +170,24 @@ async function ReadQueryMySQL(query) {
             console.log(err);
             throw err;
         }
+        // if i only assign the result to the external variable, the data doesn't get out of the function
         //mysqlRes = resultMy;
     });
     return mysqlRes;
 };
 
+// this function executes all the query on the influx database
 async function ReadQueryInfluxDB(query) {
+    // on this function i haven't the same problem as mysql
+    // so i can directly return the data 
     return await influx
         .query(query)
         .then((result) => {
+            // if the query is success return the data
             return result;
         })
         .catch(err => {
+            // otherwise throw error
             console.log(err.stack);
             throw err;
         });
