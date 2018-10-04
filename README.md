@@ -13,6 +13,7 @@ Get the project
 ~$ git clone https://github.com/sebejbaldin/NodePiedPiper.git
 ~$ cd NodePiedPiper/
 ~$ npm install
+~$ git checkout development
 ```
 
 Run the project
