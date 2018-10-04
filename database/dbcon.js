@@ -14,6 +14,8 @@ const influx = new Influx.InfluxDB({
     port: 8086,
     database: 'Angus_v1'
 });
+
+var conn = mysql.createConnection(configMSSQL);
 //in questo modo exporto un oggetto contenente tutte le funzioni che mi servono
 //commento solo la prima funzione, visto che le altre sono praticamente uguali
 //al massimo cambia il modo di aggregare i dati e le query
@@ -59,6 +61,7 @@ exports.getEnergyLastMinuteBySens = async () => {
     from (select * from testdata group by tag_sensor_id )
     where time > now() - 1m group by tag_sensor_id`);
 
+    
     let obj = [];
     try {
         MySQLResult.forEach(element => {
@@ -113,10 +116,11 @@ exports.getInstantByMachine = async () => {
     }
 };
 
-exports.tryQueryInflux = (res) => {
-    const query = `select sum(value) 
+exports.tryQueryInflux = async (res) => {
+    /* const query = `select sum(value) 
         from (select * from testdata group by tag_sensor_id )
         where time > now() - 1m group by tag_sensor_id`;
+        
     influx
         .query(query)
         .then(result => {
@@ -127,74 +131,9 @@ exports.tryQueryInflux = (res) => {
             res.json(obj);
         }).catch(err => {
             console.log(err.stack);
-        })
-};
-
-exports.tryQueryMySQL = (res) => {
-    var conn = mysql.createConnection(configMSSQL);
-    const query = `select m.name, s.id, s.type from machines m 
-        join sensors s on s.machine_id=m.id 
-        where s.type='corrente assorbita'`;
-    conn.connect();
-    conn.query(query, function (err, resultMy, fields) {
-        if (err)
-            console.log(err);
-        else
-            console.log(resultMy);
-
-        let obj = {
-            query: query,
-            results: resultMy
-        }
-
-        res.json(obj);
-    });
-    conn.end();
-};
-
-exports.tryQueryGen = (res) => {
-    var conn = mysql.createConnection(configMSSQL);
-
-    conn.connect();
-    conn.query(`select m.name, s.id, s.type from machines m 
-        join sensors s on s.machine_id=m.id 
-        where s.type='corrente assorbita'`, function (err, resultMy, fields) {
-        if (err)
-            console.log(err);
-        else
-            console.log(resultMy);
-        influx
-            .query(`select sum(value) 
-            from (select * from testdata group by tag_sensor_id )
-            where time > now() - 1m group by tag_sensor_id`)
-            .then(result => {
-                let obj = [];
-                try {
-                    resultMy.forEach(element => {
-                        let idSens = element.id;
-                        result.forEach(item => {
-                            if (item.tag_sensor_id == idSens) {
-                                obj.push({
-                                    name: element.name,
-                                    value: item.sum
-                                });
-                            }
-                        })
-                    });
-                    console.log(obj);
-                    res.json(obj);
-                } catch (e) {
-                    res.json({
-                        err: 'NoData'
-                    });
-                }
-            })
-            .catch(err => {
-                console.log(err.stack);
-            })
-
-    });
-    conn.end();
+        }) */
+        let InfluxResult = await ReadQueryInfluxDB(`select * from testdata limit 1`);
+        res.send(InfluxResult);
 };
 
 exports.insertMeasurement = (res, data) => {
@@ -214,18 +153,22 @@ exports.insertMeasurement = (res, data) => {
 };
 
 async function ReadQueryMySQL(query) {
-    let mysqlRes = {};
-    let conn = mysql.createConnection(configMSSQL);
-    await conn.connect();
+    let mysqlRes = [];
+    //let conn = mysql.createConnection(configMSSQL);
+    conn.connect();
     await conn.query(query, (err, resultMy, fields) => {
+        conn.end();
         
+        console.log(resultMy);
+        resultMy.forEach(x => {
+            mysqlRes.push(x);
+        });
         if (err) {
             console.log(err);
             throw err;
         }
-        mysqlRes = resultMy;
+        //mysqlRes = resultMy;
     });
-    conn.end();
     return mysqlRes;
 };
 
@@ -239,54 +182,4 @@ async function ReadQueryInfluxDB(query) {
             console.log(err.stack);
             throw err;
         });
-};
-
-exports.getAsyncQueryGen = async () => {
-    let conn = mysql.createConnection(configMSSQL);
-    conn.connect();
-    let mysqlRes = {};
-    await conn.query(`select m.name, s.id, s.type from machines m 
-        join sensors s on s.machine_id=m.id 
-        where s.type='corrente assorbita'`, (err, resultMy, fields) => {
-        conn.end();
-
-        if (err) {
-            console.log(err);
-            throw err;
-        }
-
-        mysqlRes = resultMy;
-    });
-    let influxRes = await influx
-        .query(`select sum(value) 
-        from (select * from testdata group by tag_sensor_id )
-        where time > now() - 1m group by tag_sensor_id`)
-        .then((result) => {
-            return result;
-        })
-        .catch(err => {
-            console.log(err.stack);
-            throw err;
-        });
-
-    let obj = [];
-    try {
-        mysqlRes.forEach(element => {
-            let idSens = element.id;
-            influxRes.forEach(item => {
-                if (item.tag_sensor_id == idSens) {
-                    obj.push({
-                        name: element.name,
-                        value: item.sum
-                    });
-                }
-            })
-        });
-        console.log(obj);
-        return obj;
-    } catch (e) {
-        return {
-            err: 'NoData'
-        };
-    }
 };
