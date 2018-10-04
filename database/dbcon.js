@@ -51,6 +51,31 @@ exports.getGlobalEnergySumLM = async () => {
 };
 
 exports.getEnergyLastMinuteBySens = async () => {
+    let MyQuery = `select m.name, s.id, s.type from machines m 
+    join sensors s on s.machine_id=m.id 
+    where s.type='corrente assorbita'`;
+    let InQuery = `select sum(value) 
+    from (select * from testdata group by tag_sensor_id )
+    where time > now() - 1m group by tag_sensor_id`;
+
+    return GetData(MyQuery, InQuery, async (MyRes, InRes) => {
+        let obj = [];
+
+        MySQLResult.forEach(element => {
+            let idSens = element.id;
+            InfluxResult.forEach(item => {
+                if (item.tag_sensor_id == idSens) {
+                    obj.push({
+                        name: element.name,
+                        value: item.sum
+                    });
+                }
+            })
+        });
+        console.log(obj);
+        return obj;
+
+    });
 
     let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
@@ -60,7 +85,7 @@ exports.getEnergyLastMinuteBySens = async () => {
     from (select * from testdata group by tag_sensor_id )
     where time > now() - 1m group by tag_sensor_id`);
 
-    
+
     let obj = [];
     try {
         MySQLResult.forEach(element => {
@@ -82,6 +107,36 @@ exports.getEnergyLastMinuteBySens = async () => {
         };
     }
 };
+
+/*
+query consumo istantaneo per ogni sensor id:
+  select * from testdata group by tag_sensor_id order by time desc limit 1
+*/
+exports.getInstantEnergyDrainForSensor = async () => {
+    let MyQuery = `select * from sensors`;
+    let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
+
+    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
+
+        let obj = [];
+        InRes.forEach(m => {
+            MyRes.forEach(k => {
+                if (m.sensor_id == k.id) {
+                    obj.push({
+                        time: m.time,
+                        id: m.id,
+                        sensor_id: m.sensor_id,
+                        value: m.value,
+                        sensor_type: k.type,
+                        machine_id: k.machine_id
+                    });
+                }
+            });
+        });
+        return obj;
+
+    });
+}
 
 exports.getInstantByMachine = async () => {
     let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
@@ -131,8 +186,8 @@ exports.tryQueryInflux = async (res) => {
         }).catch(err => {
             console.log(err.stack);
         }) */
-        let InfluxResult = await ReadQueryInfluxDB(`select * from testdata limit 1`);
-        res.send(InfluxResult);
+    let InfluxResult = await ReadQueryInfluxDB(`select * from testdata limit 1`);
+    res.send(InfluxResult);
 };
 
 exports.insertMeasurement = (res, data) => {
@@ -153,42 +208,105 @@ exports.insertMeasurement = (res, data) => {
 
 // this function executes all the query on the mysql database
 async function ReadQueryMySQL(query) {
-    // inizialized the container of the result
-    let mysqlRes = [];
-    // connect to the database
-    conn.connect();
-    // the query is beign processed    
-    await conn.query(query, (err, resultMy, fields) => {
-        conn.end();
-        // after have received response the connection is being closed        
-        console.log(resultMy);
-        // the data are being inserted
-        resultMy.forEach(x => {
-            mysqlRes.push(x);
+    if (queryIsValid(query)) {
+        // inizialized the container of the result
+        let mysqlRes = [];
+        // connect to the database
+        conn.connect();
+        // the query is beign processed        
+        await conn.query(query, (err, resultMy, fields) => {
+            conn.end();
+            // after have received response the connection is being closed        
+            console.log(resultMy);
+            // the data are being inserted
+            resultMy.forEach(x => {
+                mysqlRes.push(x);
+            });
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+            // if i only assign the result to the external variable, the data doesn't get out of the function
+            //mysqlRes = resultMy;
         });
-        if (err) {
-            console.log(err);
-            throw err;
-        }
-        // if i only assign the result to the external variable, the data doesn't get out of the function
-        //mysqlRes = resultMy;
-    });
-    return mysqlRes;
+        return mysqlRes;
+    } else
+        return {};
 };
 
 // this function executes all the query on the influx database
 async function ReadQueryInfluxDB(query) {
-    // on this function i haven't the same problem as mysql
-    // so i can directly return the data 
-    return await influx
-        .query(query)
-        .then((result) => {
-            // if the query is success return the data
-            return result;
-        })
-        .catch(err => {
-            // otherwise throw error
-            console.log(err.stack);
-            throw err;
-        });
+    if (queryIsValid(query)) {
+        // on this function i haven't the same problem as mysql
+        // so i can directly return the data 
+        return await influx
+            .query(query)
+            .then((result) => {
+                // if the query is success return the data
+                return result;
+            })
+            .catch(err => {
+                // otherwise throw error
+                console.log(err.stack);
+                throw err;
+            });
+    } else
+        return {};
 };
+
+async function GetData(qMySQL, qInflux, processor) {
+    let dataMy = {};
+    let dataIn = {};
+    try {
+
+        dataMy = await ReadQueryMySQL(qMySQL);
+
+    } catch (errz) {
+        console.log(errz);
+        return {
+            err: 'Error on mysql query'
+        };
+    }
+    try {
+
+        dataIn = await ReadQueryInfluxDB(qInflux);
+
+    } catch (errz) {
+        console.log(errz);
+        return {
+            err: 'Error on influx query'
+        };
+    }
+    try {
+
+        return await processor(dataMy, dataIn);
+
+    } catch (errz) {
+        console.log(errz);
+        return {
+            err: 'Error on processing data'
+        };
+    }
+}
+
+function queryIsValid(query) {
+    try {
+        let string = "";
+        string = query;
+        if (string.length > 0)
+            return true;
+
+        /*  let x = 0;
+         while (query[x] != undefined && query[x] != null) {
+             x++;
+         }
+         if (x > 0)
+             return true; */
+
+
+        return false;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+}
