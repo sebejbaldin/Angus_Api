@@ -18,36 +18,31 @@ const influx = new Influx.InfluxDB({
 var conn = mysql.createConnection(configMSSQL);
 
 exports.getGlobalEnergySumLM = async () => {
-    // for the details of these 2 function please refer on the implementation
-    let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
+    let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`);
-
-    let InfluxResult = await ReadQueryInfluxDB(`select sum(value) 
+    where s.type='corrente assorbita'`;
+    let InQuery = `select sum(value) 
     from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`);
+    where time > now() - 1m group by tag_sensor_id`;
 
-    // the data are being processed after have being received from the database 
-    let obj = {
-        descr: 'globalEnergySumLastMinute'
-    };
-    let sum = 0;
-    try {
-        MySQLResult.forEach(element => {
+    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
+        // the data are being processed after have being received from the database 
+        let obj = {
+            descr: 'globalEnergySumLastMinute'
+        };
+        let sum = 0;
+
+        MyRes.forEach(element => {
             let idSens = element.id;
-            InfluxResult.forEach(item => {
+            InRes.forEach(item => {
                 if (item.tag_sensor_id == idSens) {
                     sum += item.sum;
                 }
-            })
+            });
         });
         obj.sum = sum;
         return obj;
-    } catch (e) {
-        return {
-            err: 'NoData'
-        };
-    }
+    });
 };
 
 exports.getEnergyLastMinuteBySens = async () => {
@@ -59,11 +54,11 @@ exports.getEnergyLastMinuteBySens = async () => {
     where time > now() - 1m group by tag_sensor_id`;
 
     return GetData(MyQuery, InQuery, async (MyRes, InRes) => {
-        let obj = [];
 
-        MySQLResult.forEach(element => {
+        let obj = [];
+        MyRes.forEach(element => {
             let idSens = element.id;
-            InfluxResult.forEach(item => {
+            InRes.forEach(item => {
                 if (item.tag_sensor_id == idSens) {
                     obj.push({
                         name: element.name,
@@ -76,36 +71,6 @@ exports.getEnergyLastMinuteBySens = async () => {
         return obj;
 
     });
-
-    let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
-    join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`);
-
-    let InfluxResult = await ReadQueryInfluxDB(`select sum(value) 
-    from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`);
-
-
-    let obj = [];
-    try {
-        MySQLResult.forEach(element => {
-            let idSens = element.id;
-            InfluxResult.forEach(item => {
-                if (item.tag_sensor_id == idSens) {
-                    obj.push({
-                        name: element.name,
-                        value: item.sum
-                    });
-                }
-            })
-        });
-        console.log(obj);
-        return obj;
-    } catch (e) {
-        return {
-            err: 'NoData'
-        };
-    }
 };
 
 /*
@@ -139,20 +104,20 @@ exports.getInstantEnergyDrainForSensor = async () => {
 }
 
 exports.getInstantByMachine = async () => {
-    let MySQLResult = await ReadQueryMySQL(`select m.name, s.id, s.type from machines m 
+    let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`);
-
-    let InfluxResult = await ReadQueryInfluxDB(`select * from testdata 
+    where s.type='corrente assorbita'`;
+    let InQuery = `select * from testdata 
     group by tag_sensor_id 
     order by time desc 
-    limit 1`);
+    limit 1`;
 
-    let obj = [];
-    try {
-        MySQLResult.forEach(element => {
+    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
+
+        let obj = [];
+        MyRes.forEach(element => {
             let idSens = element.id;
-            InfluxResult.forEach(item => {
+            InRes.forEach(item => {
                 if (item.sensor_id === idSens) {
                     obj.push({
                         name: element.name,
@@ -163,30 +128,14 @@ exports.getInstantByMachine = async () => {
         });
         console.log(obj);
         return obj;
-    } catch (e) {
-        return {
-            err: 'NoData'
-        };
-    }
+    });
 };
 
 exports.tryQueryInflux = async (res) => {
-    /* const query = `select sum(value) 
-        from (select * from testdata group by tag_sensor_id )
-        where time > now() - 1m group by tag_sensor_id`;
-        
-    influx
-        .query(query)
-        .then(result => {
-            let obj = {
-                query: query,
-                results: result
-            }
-            res.json(obj);
-        }).catch(err => {
-            console.log(err.stack);
-        }) */
-    let InfluxResult = await ReadQueryInfluxDB(`select * from testdata limit 1`);
+    
+    let InfluxResult = await GetData(MyQuery, `select * from testdata limit 1`, async (MyRes, InRes) => {
+        return InRes;
+    });
     res.send(InfluxResult);
 };
 
