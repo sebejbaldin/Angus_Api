@@ -1,5 +1,7 @@
 const Influx = require('influx');
 const mysql = require('mysql');
+const queryes = require('./queryes');
+
 // database configuration
 const configMSSQL = {
     host: 'localhost',
@@ -17,14 +19,15 @@ const influx = new Influx.InfluxDB({
 
 var conn = mysql.createConnection(configMSSQL);
 // i'll comment only the first function of this type because the concept is the same for all
-// for the description of the functions called inside this scroll down
+// for the description of the functions called inside this, scroll down
 exports.getGlobalEnergySumLM = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
     where s.type='corrente assorbita'`;
-    let InQuery = `select sum(value) 
+    /* let InQuery = `select sum(value) 
     from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`;
+    where time > now() - 1m group by tag_sensor_id`; */
+    let InQuery = queryes.influx.energyDrain_Minute_Global;
 
     // after have prepared the query you call the GetData function in which you pass three arguments
     // first mysql query, second a influx query, third a function to elaborate the data
@@ -57,9 +60,10 @@ exports.getEnergyLastMinuteBySens = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
     where s.type='corrente assorbita'`;
-    let InQuery = `select sum(value) 
+    let InQuery = queryes.influx.energyDrainBySensor_Minute_Global;
+    /* let InQuery = `select sum(value) 
     from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`;
+    where time > now() - 1m group by tag_sensor_id`; */
 
     return GetData(MyQuery, InQuery, async (MyRes, InRes) => {
 
@@ -83,7 +87,8 @@ exports.getEnergyLastMinuteBySens = async () => {
 
 exports.getInstantEnergyDrainForSensor = async () => {
     let MyQuery = `select * from sensors`;
-    let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
+    //let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
+    let InQuery = queryes.influx.
 
     return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
 
