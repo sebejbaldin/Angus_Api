@@ -17,7 +17,6 @@ const influx = new Influx.InfluxDB({
     database: 'Angus_v1'
 });
 
-var conn = mysql.createConnection(configMSSQL);
 // i'll comment only the first function of this type because the concept is the same for all
 // for the description of the functions called inside this, scroll down
 exports.getGlobalEnergySumLM = async () => {
@@ -60,12 +59,12 @@ exports.getEnergyLastMinuteBySens = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
     where s.type='corrente assorbita'`;
-    let InQuery = queryes.influx.energyDrainBySensor_Minute_Global;
-    /* let InQuery = `select sum(value) 
+    //let InQuery = queryes.influx.energyDrainBySensor_Minute_Global;
+    let InQuery = `select sum(value) 
     from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`; */
+    where time > now() - 1m group by tag_sensor_id`;
 
-    return GetData(MyQuery, InQuery, async (MyRes, InRes) => {
+    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
 
         let obj = [];
         MyRes.forEach(element => {
@@ -87,8 +86,8 @@ exports.getEnergyLastMinuteBySens = async () => {
 
 exports.getInstantEnergyDrainForSensor = async () => {
     let MyQuery = `select * from sensors`;
-    //let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
-    let InQuery = queryes.influx.
+    let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
+    //let InQuery = queryes.influx.
 
     return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
 
@@ -116,10 +115,7 @@ exports.getInstantByMachine = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
     where s.type='corrente assorbita'`;
-    let InQuery = `select * from testdata 
-    group by tag_sensor_id 
-    order by time desc 
-    limit 1`;
+    let InQuery = queryes.influx.energyDrain_Instant;
 
     return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
 
@@ -140,15 +136,15 @@ exports.getInstantByMachine = async () => {
     });
 };
 
-exports.tryQueryInflux = async (res) => {
+exports.tryQueryInflux = async () => {
     
-    let InfluxResult = await GetData(MyQuery, `select * from testdata limit 1`, async (MyRes, InRes) => {
+    return await GetData("", queryes.influx.energyDrainBySensor_Minute_Global, async (MyRes, InRes) => {
         return InRes;
     });
-    res.send(InfluxResult);
+    //res.send(InfluxResult);
 };
 
-exports.insertMeasurement = (res, data) => {
+exports.insertMeasurement = (data) => {
     //insert testdata,tag_id=1,tag_sensor_id=13 id=1,sensor_id=13,value=100
     influx.writeMeasurement('testdata', [{
         tags: {
@@ -161,11 +157,12 @@ exports.insertMeasurement = (res, data) => {
             value: data.value
         }
     }]);
-    res.end('Inserted');
+    return true;
 };
 
 // this function executes all the query on the mysql database
 async function ReadQueryMySQL(query) {
+    let conn = mysql.createConnection(configMSSQL);
     if (queryIsValid(query)) {
         // inizialize the container of the result
         let mysqlRes = [];
@@ -225,7 +222,7 @@ async function GetData(qMySQL, qInflux, processor) {
     try {
         //the first query is executed on the mysql db
         dataMy = await ReadQueryMySQL(qMySQL);
-
+        console.log(dataMy);
     } catch (errz) {
         console.log(errz);
         return {
@@ -235,6 +232,7 @@ async function GetData(qMySQL, qInflux, processor) {
     try {
         // second query is executed on the influx db 
         dataIn = await ReadQueryInfluxDB(qInflux);
+        console.log(dataIn);
 
     } catch (errz) {
         console.log(errz);
