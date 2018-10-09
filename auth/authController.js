@@ -31,7 +31,17 @@ router.post('/login', (req, res) => {
             console.error('error connecting: ' + err.stack);
             return;
         }
-        console.log('connected as id ' + conn.threadId);
+        console.log(
+          '[AUTH:tokenRequest]\t(' +
+            new Date().toLocaleString() +
+            ')\ttrying to get access for user ' +
+            req.body.email +
+            ' from\t' +
+            req.connection.remoteAddress +
+            ' [' +
+            conn.threadId +
+            ']'
+        );
     });
 
     conn.query(
@@ -81,7 +91,17 @@ router.get('/user', verifyToken, function (req, res, next) {
             console.error('error connecting: ' + err.stack);
             return;
         }
-        console.log('connected as id ' + conn.threadId);
+        console.log(
+          '[AUTH:userinfoRequest]\t(' +
+            new Date().toLocaleString() +
+            ')\ttrying to get access for user ' +
+            req.userEmail +
+            ' from\t' +
+            req.connection.remoteAddress +
+            ' [' +
+            conn.threadId +
+            ']'
+        );
     });
     conn.query(`SELECT 
         accounts.id, accounts.username, accounts.name, accounts.surname, accounts.email, accounts.grade, accounts.profileImg   
