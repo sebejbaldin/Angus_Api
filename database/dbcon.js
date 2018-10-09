@@ -1,20 +1,21 @@
 const Influx = require('influx');
 const mysql = require('mysql');
+const config = require('../config');
 const queryes = require('./queryes');
 
 // database configuration
 const configMSSQL = {
-    host: 'localhost',
-    port: 3306,
-    user: 'piedpiper',
-    password: 'piedpiper',
-    database: 'db_piedpiper'
+    host: config.mysql_config.hostname,
+    port: config.mysql_config.port,
+    user: config.mysql_config.username,
+    password: config.mysql_config.password,
+    database: config.mysql_config.database
 };
 
 const influx = new Influx.InfluxDB({
-    host: '192.168.101.81',
-    port: 8086,
-    database: 'Angus_v1'
+    host: config.influx_config.hostname,
+    port: config.influx_config.port,
+    database: config.influx_config.database
 });
 
 // i'll comment only the first function of this type because the concept is the same for all

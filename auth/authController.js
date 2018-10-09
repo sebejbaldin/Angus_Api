@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
-const config = require('./config'); // get config file
+const config = require('../config'); // get config file
 const verifyToken = require('./verifyToken');
 
 var router = express.Router();
@@ -11,10 +11,11 @@ var router = express.Router();
 }));
 router.use(bodyParser.json()); */
 const mysqlConf = {
-    host: config.hostname,
-    user: config.username,
-    password: config.password,
-    database: config.db_name
+    host: config.mysql_config.hostname,
+    port: config.mysql_config.port,
+    user: config.mysql_config.username,
+    password: config.mysql_config.password,
+    database: config.mysql_config.database
 };
 
 /**
@@ -64,7 +65,7 @@ router.post('/login', (req, res) => {
             } else {
                 // otherwise a token will be created and provided to the client
                 var token = jwt.sign({ id: result[0].id, email: result[0].email },
-                    config.secret, 
+                    config.jwt_secret, 
                     { expiresIn: 86400 } // expires in 24 hours
                 );
                 return res
