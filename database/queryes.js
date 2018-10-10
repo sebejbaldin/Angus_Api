@@ -40,8 +40,8 @@ module.exports = {
                 order by time desc`;                
             }
             return `select value from testdata 
-            where sensor_id=${sensor_id} 
-            order by time desc 
+            where time > now()            
+            group by tag_sensor_id 
             limit 1`;
         }
     }
