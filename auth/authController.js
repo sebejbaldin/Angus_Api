@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
                     id: result[0].id, 
                     email: result[0].email 
                     },
-                    config.secret, { 
+                    config.jwt_secret, { 
                         expiresIn: 86400 
                     } // expires in 24 hours
                 );
