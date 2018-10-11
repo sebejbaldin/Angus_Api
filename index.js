@@ -3,6 +3,7 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
+const ip = require('ip');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const dbmanager = require('./database/dbcon');
@@ -83,5 +84,6 @@ app.get('/*', (req, res) => {
 const port = 8081;
 server.listen(port, () => {
     console.log("Click me: http://localhost:" + port);
+    console.log("Click me: http://" + ip.address() + ":" + port);
 });
 
