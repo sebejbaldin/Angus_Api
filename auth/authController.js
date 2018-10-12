@@ -1,35 +1,36 @@
 const express = require('express');
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
-const config = require('./config'); // get config file
+const config = require('../config'); // get config file
 const verifyToken = require('./verifyToken');
 
 var router = express.Router();
 
 /* router.use(bodyParser.urlencoded({
     extended: false
-}));
-router.use(bodyParser.json()); */
+})); */
 const mysqlConf = {
-    host: config.hostname,
-    user: config.username,
-    password: config.password,
-    database: config.db_name
+    host: config.mysql_config.hostname,
+    port: config.mysql_config.port,
+    user: config.mysql_config.username,
+    password: config.mysql_config.password,
+    database: config.mysql_config.database
 };
 
 /**
- * Create new authorization token which is composed by 2 identifier
- * for the profile (id and email).
- * This API create the connection to the database MYSQL and get the
- * identifier. If something went wrong it returns the 401 page.
- * After the retriving the API create a new JWT token and return it.
+ * Creates new authorization token composed by 2 identifier of the profile (id and email).
+ * This API connect to the database searching for the credentials provided, 
+ * if they are found it creates a new token and provides it to the one that performed the request.
+ * Otherwise it returns the 401 page.
  */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     let conn = mysql.createConnection(mysqlConf);
-    conn.connect(function (err) {
+    conn.connect((err) => {
         if (err) {
             console.error('error connecting: ' + err.stack);
-            return;
+            return res
+                .status(500)
+                .end('Server error.');
         }
         console.log(
           '[AUTH:tokenRequest]\t(' +
@@ -44,32 +45,40 @@ router.post('/login', (req, res) => {
         );
     });
 
-    conn.query(
-        `SELECT accounts.id, accounts.email 
+    conn.query(`SELECT accounts.id, accounts.email 
         FROM shadow JOIN accounts ON shadow.id=accounts.id 
         WHERE email = ? AND passwd = PASSWORD( ? );`,
         [req.body.email, req.body.password],
         (error, result, fields) => {
             conn.end();
             // if there are error throws
-            if (error) 
+            if (error)
                 throw error;
             // otherwise proceed with the authentication
             if (result.length <= 0) {
                 // if no result the credentials are not in the database, so the user will be not authenticated
                 return res
                     .status(401)
-                    .json({ auth: false })
+                    .json({ 
+                        auth: false 
+                    })
                     .end();
             } else {
                 // otherwise a token will be created and provided to the client
-                var token = jwt.sign({ id: result[0].id, email: result[0].email },
-                    config.secret, 
-                    { expiresIn: 86400 } // expires in 24 hours
+                let token = jwt.sign({ 
+                    id: result[0].id, 
+                    email: result[0].email 
+                    },
+                    config.jwt_secret, { 
+                        expiresIn: 86400 
+                    } // expires in 24 hours
                 );
                 return res
                     .status(200)
-                    .json({ auth: true, token: token })
+                    .json({ 
+                        auth: true, 
+                        token: token 
+                    })
                     .end();
             }
         }
@@ -77,19 +86,18 @@ router.post('/login', (req, res) => {
 });
 
 /**
- * Allow to retrive all the user information from the server, the info
- * are used only to visualize them to the setting view and allow to
- * change them. The information retrived doesn't contains any password
- * or sensitive information. To check if is a user which try to retrive
- * the information is used a middleware called: verifyToken which check
- * if the token is right created
+ * This API retrieves all the information of the user that have performed the request. 
+ * These data are being used in the user profile view, this data does not include the user password.
+ * This function is protected by the verifyToken middleware, that checks if the token is valid.
  */
 router.get('/user', verifyToken, function (req, res, next) {
     let conn = mysql.createConnection(mysqlConf);
-    conn.connect(function (err) {
+    conn.connect((err) => {
         if (err) {
             console.error('error connecting: ' + err.stack);
-            return;
+            return res
+                .status(500)
+                .end('Server error.');
         }
         console.log(
           '[AUTH:userinfoRequest]\t(' +
@@ -103,14 +111,14 @@ router.get('/user', verifyToken, function (req, res, next) {
             ']'
         );
     });
-    conn.query(`SELECT 
-        accounts.id, accounts.username, accounts.name, accounts.surname, accounts.email, accounts.grade, accounts.profileImg   
+    conn.query(`SELECT accounts.id, accounts.username, accounts.name, accounts.surname, accounts.email, accounts.grade, accounts.profileImg   
         FROM accounts 
         WHERE accounts.email = ? AND accounts.id = ?;`,
         [req.userEmail, req.userId],
         (error, result, fields) => {
             conn.end();
-            if (error) throw error;
+            if (error)
+                throw error;
             if (result.length <= 0) {
                 //no data received, so the user have no valid credentials
                 return res
