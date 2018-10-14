@@ -7,6 +7,7 @@ module.exports = {
         limit 1`,
         energyDrain_Minute_Global: "select sum(value) from testdata where time > now() - 1m and sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25",
         //                                 `select sum(value) from (select * from testdata group by tag_sensor_id ) where time > now() - 1m group by tag_sensor_id`;
+        energyDrainBySensor_Global: 'select sum(value) from testdata where sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25',
         energyDrainBySensor_Minute_Global: "select sum(value) from testdata where time > now() - 1m and sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 group by tag_sensor_id",
         waterConsumption_Day_Global: "select sum(value) from testdata where time > now() - 24h and sensor_id=28 or sensor_id=29 or sensor_id=30",
         waterTankLevel_Day_Max: "select max(value) from testdata where time > now() - 1h and sensor_id=7 or sensor_id=9 or sensor_id=11 group by tag_sensor_id order by time desc",

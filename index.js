@@ -39,7 +39,7 @@ app.post('/api/measure', (req, res) => {
 });
 
 app.get('/api/try', async (req, res) => {
-    let obj = await dbmanager.getAsyncQueryGen();
+    let obj = await dbmanager.getEnergyDrainBySens_Instant();
     console.log(obj);
     if (obj != undefined)
         res
@@ -57,16 +57,46 @@ app.get('/api/lastminute', async (req, res) => {
     .send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
-/* setInterval(() => {
-    //dbmanager.getEnergySumLastMinuteForSens(io);
-}, 15000); */
+setInterval(async () => {
+    //io.emit('instant_energy', await dbmanager.getEnergyDrainBySens_Instant());
+    io.emit('instant_energy', [
+        {
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'engine 1'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'engine 2'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'washing'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'dryer'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'pre-washing'
+        }
+    ]);
+    
+
+}, 8000);
 
 // socket.io body
 io.on('connection', (socket) => {
     userConnected++;
     console.log('Users: ' + userConnected);
     
-    dbmanager.getEnergySumLastMinuteForSens(socket);
+    
     socket.on('disconnect', () => {
         userConnected--;
         console.log('A user disconnected\nRemaining users: ' + userConnected);
