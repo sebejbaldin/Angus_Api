@@ -4,7 +4,7 @@ module.exports = {
     hostname: "localhost",
     port: 3306,
     username: "piedpiper",
-    password: "piedpiper",
+    password: "PiedPiper2018",
     database: "db_piedpiper"
   },
   influx_config: {
