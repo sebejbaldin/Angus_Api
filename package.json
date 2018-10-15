@@ -1,9 +1,12 @@
 {
-    "name": "FG204",
-    "description": "Future Gadget 204, 2nd Edition Ver. 2.31",
-    "authors": "Barrel Titor",
-    "version": "2.31.6",
+    "name": "Api Angus",
+    "description": "Api for angus dashboard",
+    "authors": "PiedPiper team",
+    "version": "1.3",
     "main": "index.js",
+    "scripts": {
+        "start":"nodemon index.js"
+    },
     "dependencies": {
         "body-parser": "^1.18.2",
         "cors": "^2.8.4",

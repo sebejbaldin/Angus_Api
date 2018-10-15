@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 app.use("/api/auth", authController);
 
 // Added strucutre
-app.use("/api/structure", structController);
+app.use("/api/factory", structController);
 
 // middleware that check if the user is authenticated
 // if the user isn't authenticated it block the request, otherwise let the request to be processed
