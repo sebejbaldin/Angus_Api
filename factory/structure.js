@@ -14,6 +14,9 @@ const mysqlConf = {
   database: config.mysql_config.database
 };
 
+/**
+ * Get the area information by id
+ */
 router.get("/area/:id", verifyToken, function(req, res, next) {
   let conn = mysql.createConnection(mysqlConf);
   conn.connect(function(err) {
