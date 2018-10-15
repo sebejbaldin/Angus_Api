@@ -8,6 +8,7 @@ const cors = require('cors');
 const dbmanager = require('./database/dbcon');
 const authController = require('./auth/authController');
 const verifyToken = require('./auth/verifyToken');
+const queryes = require('./database/queryes');
 
 //represent the number of client connected with socket.io
 var userConnected = 0;
@@ -56,7 +57,7 @@ app.get('/api/lastminute', async (req, res) => {
     .send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
-setInterval(async () => {
+/* setInterval(async () => {
     //io.emit('instant_energy', await dbmanager.getEnergyDrainBySens_Instant());
     io.emit('instant_energy', [
         {
@@ -88,14 +89,54 @@ setInterval(async () => {
     ]);
     
 
-}, 8000);
+}, 10000); */
 
 // socket.io body
 io.on('connection', (socket) => {
     userConnected++;
     console.log('Users: ' + userConnected);
     
-    
+    socket.on('supervisor_home', async () => {
+        console.log('nel socket.io di supervisor home');
+        let sup_home = {};
+        sup_home.energy_Average = await dbmanager.getEnergyDrain_Average(queryes.influx.timespan.week);
+        sup_home.uptime_Average = await dbmanager.getUptime_Average(queryes.influx.timespan.week);
+        sup_home.water_Average = await dbmanager.getWaterConsumption_Average(queryes.influx.timespan.week);
+        sup_home.energy_Instant = await dbmanager.getEnergyDrain_Instant();
+        sup_home.uptime_Instant = await dbmanager.getUptime_Instant();
+        sup_home.water_Instant = await dbmanager.getWaterConsumption_Instant();
+        console.log('Emitting data...');
+        socket.emit('supervisor_data_home', sup_home);
+    });
+
+    socket.emit('instant_energy', [
+        {
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'engine 1'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'engine 2'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'washing'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'dryer'
+        },{
+            time: 'now',
+            value: Math.floor(Math.random() * (25000 - 200)) + 200,
+            machine_id: 3,
+            machine_name: 'pre-washing'
+        }
+    ]);
     socket.on('disconnect', () => {
         userConnected--;
         console.log('A user disconnected\nRemaining users: ' + userConnected);
@@ -103,7 +144,7 @@ io.on('connection', (socket) => {
 });
 
 // if the request haven't been captured yet, it return a 404 status to the request
-app.get('/*', (req, res) => {
+app.get('*', (req, res) => {
     res
     .status(404)
     .end('Error 404, page not found.');

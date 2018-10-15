@@ -71,7 +71,7 @@ exports.getEnergyDrain_Minute_Global = async () => {
         // this is what will be do to the data in this case
         
     });
-};
+}
 
 exports.getEnergyDrainBySens_Global = async () => {
     return await GetData('', queryes.influx.energyDrainBySensor_Global, async (MyRes, InRes) => {
@@ -103,6 +103,53 @@ exports.getEnergyDrainBySens_Global = async () => {
     });
 }
 
+exports.getEnergyDrain_Average = async (timespan) => {
+    return await GetData(undefined, queryes.influx.GetEnergyConsuption_Average(timespan), async (MyRes, InRes) => {
+        //Try the query and see what return
+        console.log(InRes);
+        return InRes[0].mean;
+    });
+}
+
+exports.getWaterConsumption_Average = async (timespan) => {
+    return await GetData(undefined, queryes.influx.GetWaterConsuption_Average(timespan), async (MyRes, InRes) => {
+        console.log(InRes);
+        return InRes[0].mean;
+
+    });
+}
+
+exports.getUptime_Average = async (timespan) => {
+    return await GetData(undefined, queryes.influx.GetUptime_Average(timespan), async (MyRes, InRes) => {
+        console.log(InRes);
+        return InRes[0].mean;
+
+    });
+}
+
+exports.getEnergyDrain_Instant = async () => {
+    return await GetData(undefined, queryes.influx.energyConsumption_Instant, async (MyRes, InRes) => {
+        console.log(InRes);
+        return InRes[0].value;
+    });
+}
+
+exports.getWaterConsumption_Instant = async () => {
+    return await GetData(undefined, queryes.influx.waterConsumption_Instant, async (MyRes, InRes) => {
+        console.log(InRes);
+        return InRes[0].value;
+
+    });
+}
+
+exports.getUptime_Instant = async () => {
+    return await GetData(undefined, queryes.influx.uptime_Instant, async (MyRes, InRes) => {
+        console.log(InRes);
+        return InRes[0].value;
+
+    });
+}
+
 exports.getEnergyDrainBySens_Minute = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
     join sensors s on s.machine_id=m.id 
@@ -130,7 +177,7 @@ exports.getEnergyDrainBySens_Minute = async () => {
         return obj;
 
     });
-};
+}
 
 exports.getInstantEnergyDrainForSensor = async () => {
     let MyQuery = `select * from sensors`;
@@ -182,7 +229,7 @@ exports.getInstantByMachine = async () => {
         console.log(obj);
         return obj;
     });
-};
+}
 
 exports.tryQueryInflux = async () => {
     
@@ -190,7 +237,7 @@ exports.tryQueryInflux = async () => {
         return InRes;
     });
     //res.send(InfluxResult);
-};
+}
 
 exports.insertMeasurement = (data) => {
     //insert testdata,tag_id=1,tag_sensor_id=13 id=1,sensor_id=13,value=100
@@ -206,7 +253,7 @@ exports.insertMeasurement = (data) => {
         }
     }]);
     return true;
-};
+}
 
 // this function executes all the query on the mysql database
 async function ReadQueryMySQL(query) {
@@ -219,6 +266,10 @@ async function ReadQueryMySQL(query) {
         // the query is beign processed        
         await conn.query(query, (err, resultMy, fields) => {
             conn.end();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
             // after have received response the connection is being closed        
             console.log('MySQL Result:\n' + resultMy);
             // the data are being inserted in the container
@@ -227,17 +278,14 @@ async function ReadQueryMySQL(query) {
             resultMy.forEach(x => {
                 mysqlRes.push(x);
             });
-            if (err) {
-                console.log(err);
-                throw err;
-            }
+            
             // if i only assign the result to the external variable, the data doesn't get out of the function
             // mysqlRes = resultMy;
         });
         return mysqlRes;
     } else
         return {};
-};
+}
 
 // this function executes all the query on the influx database
 async function ReadQueryInfluxDB(query) {
@@ -258,7 +306,7 @@ async function ReadQueryInfluxDB(query) {
             });
     } else
         return {};
-};
+}
 
 // this function is the one to use to get data from the database
 // it's parameters are (in the same order): the query for mysql db and the one for influx db, the function to process the data to return
@@ -308,15 +356,15 @@ function queryIsValid(query) {
     try {
         let string = "";
         string = query;
+        if (query == undefined)
+        {
+            console.log(query);
+            return false;
+        }
         if (string.length > 0)
             return true;
 
-        /*  let x = 0;
-         while (query[x] != undefined && query[x] != null) {
-             x++;
-         }
-         if (x > 0)
-             return true; */
+        
 
 
         return false;
@@ -333,15 +381,19 @@ conn.query(`select m.name, s.machine_id, s.id, s.type
     join sensors s 
     on s.machine_id=m.id`, (err, resultMy, fields) => {
     conn.end();
+    if (err) {
+        console.log(err);
+        
+    }
     
-    console.log(resultMy);
-    
+    console.log(resultMy); //undefined
+    try {
     resultMy.forEach(x => {
         sensors_all.push(x);
     });
-    if (err) {
-        console.log(err);
-        throw err;
-    }
+}catch{
+    
+}
+    
     
 });        
