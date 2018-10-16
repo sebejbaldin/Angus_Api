@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const dbmanager = require('./database/dbcon');
 const authController = require('./auth/authController');
+const structController = require('./factory/structure');
 const verifyToken = require('./auth/verifyToken');
 const queryes = require('./database/queryes');
 const ip = require('ip');
