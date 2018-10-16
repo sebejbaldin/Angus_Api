@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const server = require('http').Server(app);
-const io = require('socket.io')(server);
+const server = require("http").Server(app);
+const io = require("socket.io")(server);
 
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -9,6 +9,7 @@ const dbmanager = require('./database/dbcon');
 const authController = require('./auth/authController');
 const verifyToken = require('./auth/verifyToken');
 const queryes = require('./database/queryes');
+const ip = require('ip');
 
 //represent the number of client connected with socket.io
 var userConnected = 0;
@@ -16,12 +17,15 @@ var userConnected = 0;
 app.use(cors());
 app.use(bodyParser.json());
 // Added authentication with jwt
-app.use('/api/auth', authController);
+app.use("/api/auth", authController);
+
+// Added strucutre
+app.use("/api/factory", structController);
 
 // middleware that check if the user is authenticated
 // if the user isn't authenticated it block the request, otherwise let the request to be processed
 app.use((req, res, next) => {
-    verifyToken(req, res, next);
+  verifyToken(req, res, next);
 });
 
 /* app.post('/try', (req, res) => {
@@ -30,31 +34,23 @@ app.use((req, res, next) => {
 }); */
 
 // post api to insert new measurements
-app.post('/api/measure', (req, res) => {
-    if (req.body != null) {
-        dbmanager.insertMeasurement(res, req.body);
-    } else {
-        res.end('No data received.');
-    }
+app.post("/api/measure", (req, res) => {
+  if (req.body != null) {
+    dbmanager.insertMeasurement(res, req.body);
+  } else {
+    res.end("No data received.");
+  }
 });
 
-app.get('/api/try', async (req, res) => {
-    let obj = await dbmanager.getEnergyDrainBySens_Instant();
-    console.log(obj);
-    if (obj != undefined)
-        res
-        .status(200)
-        .send(obj);
-    else
-        res
-        .status(500)
-        .send(obj);
+app.get("/api/try", async (req, res) => {
+  let obj = await dbmanager.getEnergyDrainBySens_Instant();
+  console.log(obj);
+  if (obj != undefined) res.status(200).send(obj);
+  else res.status(500).send(obj);
 });
 
-app.get('/api/lastminute', async (req, res) => {
-    res
-    .status(200)
-    .send(await dbmanager.getEnergyLastMinuteBySens());
+app.get("/api/lastminute", async (req, res) => {
+  res.status(200).send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
 /* setInterval(async () => {
@@ -154,7 +150,8 @@ app.get('*', (req, res) => {
 // server listening
 const port = 8081;
 server.listen(port, () => {
-    console.log("Click me: http://localhost:" + port);
+  console.log("Click me: http://" + ip.address() + ":" + port);
+  console.log("Click me: http://localhost:" + port);
 });
 
 async function getSupervisorHomeData() {
