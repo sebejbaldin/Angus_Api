@@ -26,7 +26,7 @@ app.use("/api/factory", structController);
 // middleware that check if the user is authenticated
 // if the user isn't authenticated it block the request, otherwise let the request to be processed
 app.use((req, res, next) => {
-  verifyToken(req, res, next);
+    verifyToken(req, res, next);
 });
 
 /* app.post('/try', (req, res) => {
@@ -36,22 +36,22 @@ app.use((req, res, next) => {
 
 // post api to insert new measurements
 app.post("/api/measure", (req, res) => {
-  if (req.body != null) {
-    dbmanager.insertMeasurement(res, req.body);
-  } else {
-    res.end("No data received.");
-  }
+    if (req.body != null) {
+        dbmanager.insertMeasurement(res, req.body);
+    } else {
+        res.end("No data received.");
+    }
 });
 
 app.get("/api/try", async (req, res) => {
-  let obj = await dbmanager.getEnergyDrainBySens_Instant();
-  console.log(obj);
-  if (obj != undefined) res.status(200).send(obj);
-  else res.status(500).send(obj);
+    let obj = await dbmanager.getEnergyDrainBySens_Instant();
+    console.log(obj);
+    if (obj != undefined) res.status(200).send(obj);
+    else res.status(500).send(obj);
 });
 
 app.get("/api/lastminute", async (req, res) => {
-  res.status(200).send(await dbmanager.getEnergyLastMinuteBySens());
+    res.status(200).send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
 /* setInterval(async () => {
@@ -92,8 +92,8 @@ app.get("/api/lastminute", async (req, res) => {
 io.on('connection', (socket) => {
     userConnected++;
     console.log('Users: ' + userConnected);
-    
-    socket.on('supervisor_home', async () => {
+
+    /* socket.on('supervisor_home', async () => {
         console.log('nel socket.io di supervisor home');
         let sup_home = await getSupervisorHomeData();        
         console.log('Emitting data...');
@@ -105,6 +105,23 @@ io.on('connection', (socket) => {
         let man_home = await getManutentorHomeData();        
         console.log('Emitting data...');
         socket.emit('manutentor_data_home', man_home);
+    }); */
+
+    socket.on('home_run', async (grade) => {
+        if (grade == 1) {
+            //supervisor
+            console.log('README: supervisor home');
+            let sup_home = await getSupervisorHomeData();
+            console.log('Emitting data...');
+            socket.emit('supervisor_data_home', sup_home);
+        }
+        else if (grade == 2) {
+            //manutentor
+            console.log('README: manutentor home');
+            let man_home = await getManutentorHomeData();
+            console.log('Emitting data...');
+            socket.emit('manutentor_data_home', man_home);
+        }
     });
 
     socket.emit('instant_energy', [
@@ -113,22 +130,22 @@ io.on('connection', (socket) => {
             value: Math.floor(Math.random() * (25000 - 200)) + 200,
             machine_id: 3,
             machine_name: 'engine 1'
-        },{
+        }, {
             time: 'now',
             value: Math.floor(Math.random() * (25000 - 200)) + 200,
             machine_id: 3,
             machine_name: 'engine 2'
-        },{
+        }, {
             time: 'now',
             value: Math.floor(Math.random() * (25000 - 200)) + 200,
             machine_id: 3,
             machine_name: 'washing'
-        },{
+        }, {
             time: 'now',
             value: Math.floor(Math.random() * (25000 - 200)) + 200,
             machine_id: 3,
             machine_name: 'dryer'
-        },{
+        }, {
             time: 'now',
             value: Math.floor(Math.random() * (25000 - 200)) + 200,
             machine_id: 3,
@@ -144,15 +161,15 @@ io.on('connection', (socket) => {
 // if the request haven't been captured yet, it return a 404 status to the request
 app.get('*', (req, res) => {
     res
-    .status(404)
-    .end('Error 404, page not found.');
+        .status(404)
+        .end('Error 404, page not found.');
 });
 
 // server listening
 const port = 8081;
 server.listen(port, () => {
-  console.log("Click me: http://" + ip.address() + ":" + port);
-  console.log("Click me: http://localhost:" + port);
+    console.log("Click me: http://" + ip.address() + ":" + port);
+    console.log("Click me: http://localhost:" + port);
 });
 
 async function getSupervisorHomeData() {
@@ -170,9 +187,50 @@ async function getSupervisorHomeData() {
 }
 
 async function getManutentorHomeData() {
-    let tmp = {};
-    tmp.water_level = await dbmanager.getWaterLevel_Grouped();
-    tmp.revolutionxminute = await dbmanager.getRPM_Grouped();
-    tmp.temperature = await dbmanager.getTemperature_Grouped();
+    let tmp = {
+        pretreatment: {
+            finisher: 0,
+            primer: 0,
+            pretreatment: 0
+        },
+        prewashing: {
+            temp: 0,
+            revolutionxminute: 0,
+            water_level: 0
+        },
+        washing: {
+            temp: 0,
+            revolutionxminute: 0,
+            water_level: 0
+        },
+        drying: {
+            temp: 0,
+            revolutionxminute: 0
+        },
+        storage: {
+            engine_one: {
+                revolutionxminute : 0
+            },
+            engine_two: {
+                revolutionxminute : 0
+            }
+        }
+    }, raw = {};
+    raw.water = await dbmanager.getWaterLevel_Grouped();
+    raw.temp = await dbmanager.getTemperature_Grouped();
+    raw.revol = await dbmanager.getRPM_Grouped();    
+    tmp.pretreatment.finisher = raw.water[0].value;
+    tmp.prewashing.water_level = raw.water[1].value;
+    tmp.washing.water_level = raw.water[2].value;
+    tmp.pretreatment.pretreatment = raw.water[3].value;
+    tmp.pretreatment.primer = raw.water[4].value;
+    tmp.prewashing.revolutionxminute = raw.revol[0].value;
+    tmp.washing.revolutionxminute = raw.revol[1].value;
+    tmp.drying.revolutionxminute = raw.revol[2].value;
+    tmp.storage.engine_one = raw.revol[3].value;
+    tmp.storage.engine_two = raw.revol[4].value;
+    tmp.prewashing.temp = raw.temp[0].value;
+    tmp.washing.temp = raw.temp[1].value;
+    tmp.drying.temp = raw.temp[2].value;
     return tmp;
 }

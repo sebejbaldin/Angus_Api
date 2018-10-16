@@ -160,20 +160,23 @@ exports.getWaterConsumption_Grouped_Day = async () => {
 }
 // these three are the query for the manutentor
 exports.getWaterLevel_Grouped = async () => {
-    return await GetData(undefined, '', async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.waterLevel_Instant_Grouped, async (MyRes, InRes) => {
         console.log(InRes);
+        return InRes;        
     });
 }
 
 exports.getTemperature_Grouped = async () => {
-    return await GetData(undefined, '', async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.temperature_Instant_Grouped, async (MyRes, InRes) => {
         console.log(InRes);
+        return InRes;        
     });
 }
 
 exports.getRPM_Grouped = async () => {
-    return await GetData(undefined, '', async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.revolutionxMinute_Instant_Grouped, async (MyRes, InRes) => {
         console.log(InRes);
+        return InRes;        
     });
 }
 /*
