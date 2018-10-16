@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
         WHERE email = ? AND passwd = PASSWORD( ? );`,
         [req.body.email, req.body.password],
         (error, result, fields) => {
-            conn.query('INSERT INTO accesslogs(address) VALUES ( ? );', [req.connection.remoteAddress], (error, result, fields) => { if(error) throw error;});
+            conn.query('INSERT INTO accesslogs(address, email) VALUES ( ?, ? );', [req.connection.remoteAddress, req.body.email], (error, result, fields) => { if(error) throw error;});
             conn.end();
             // if there are error throws
             if (error)
