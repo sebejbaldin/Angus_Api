@@ -73,7 +73,8 @@ router.get("/area/:id", verifyToken, function(req, res, next) {
 router.get("/areas", verifyToken, function(req, res, next) {
   let conn = mysql.createConnection(mysqlConf);
   conn.connect(function(err) {
-    if (err) {
+    if (err) {rs
+      
       console.log("error connecting: " + err.stack);
       return;
     }
