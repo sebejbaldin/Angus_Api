@@ -104,51 +104,82 @@ exports.getEnergyDrainBySens_Global = async () => {
 }
 
 exports.getEnergyDrain_Average = async (timespan) => {
-    return await GetData(undefined, queryes.influx.GetEnergyConsuption_Average(timespan), async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.averageEnergy_Week, async (MyRes, InRes) => {
+//  return await GetData(undefined, queryes.influx.GetEnergyConsuption_Average(timespan), async (MyRes, InRes) => {
         //Try the query and see what return
         console.log(InRes);
-        return InRes[0].mean;
+        //return InRes[0].mean_sum_e;
     });
 }
 
 exports.getWaterConsumption_Average = async (timespan) => {
     return await GetData(undefined, queryes.influx.GetWaterConsuption_Average(timespan), async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes[0].mean;
-
+        //return InRes[0].mean;
     });
 }
 
 exports.getUptime_Average = async (timespan) => {
     return await GetData(undefined, queryes.influx.GetUptime_Average(timespan), async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes[0].mean;
-
+        //return InRes[0].mean;
     });
 }
 
 exports.getEnergyDrain_Instant = async () => {
     return await GetData(undefined, queryes.influx.energyConsumption_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes[0].value;
+        //return InRes[0].value;
     });
 }
 
 exports.getWaterConsumption_Instant = async () => {
     return await GetData(undefined, queryes.influx.waterConsumption_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes[0].value;
-
+        //return InRes[0].value;
     });
 }
 
 exports.getUptime_Instant = async () => {
     return await GetData(undefined, queryes.influx.uptime_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes[0].value;
-
+        //return InRes[0].value;
     });
 }
+
+exports.getEnergyDrain_Grouped_Day = async () => {
+    return await GetData(undefined, '', async (MyRes, InRes) => {
+        console.log(InRes);
+    });
+}
+
+exports.getWaterConsumption_Grouped_Day = async () => {
+    return await GetData(undefined, '', async (MyRes, InRes) => {
+        console.log(InRes);
+    });
+}
+// these three are the query for the manutentor
+exports.getWaterLevel_Grouped = async () => {
+    return await GetData(undefined, '', async (MyRes, InRes) => {
+        console.log(InRes);
+    });
+}
+
+exports.getTemperature_Grouped = async () => {
+    return await GetData(undefined, '', async (MyRes, InRes) => {
+        console.log(InRes);
+    });
+}
+
+exports.getRPM_Grouped = async () => {
+    return await GetData(undefined, '', async (MyRes, InRes) => {
+        console.log(InRes);
+    });
+}
+/*
+per il manutentore prendo tutti i dati dei giri e del livello dell'acqua(per sensore), 
+e quelli della temperatura, anche se in teoria sono 3 ma le mockup sono 5
+*/
 
 exports.getEnergyDrainBySens_Minute = async () => {
     let MyQuery = `select m.name, s.id, s.type from machines m 
@@ -375,25 +406,21 @@ function queryIsValid(query) {
 }
 
 let conn = mysql.createConnection(configMSSQL);            
-conn.connect();             
+conn.connect();
 conn.query(`select m.name, s.machine_id, s.id, s.type 
     from machines m 
     join sensors s 
     on s.machine_id=m.id`, (err, resultMy, fields) => {
     conn.end();
     if (err) {
-        console.log(err);
-        
+        console.log(err);        
     }
     
-    console.log(resultMy); //undefined
+    //console.log(resultMy); //undefined
     try {
     resultMy.forEach(x => {
         sensors_all.push(x);
     });
-}catch{
-    
-}
-    
-    
+    }catch{   
+    }    
 });        
