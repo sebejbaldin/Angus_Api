@@ -98,15 +98,16 @@ io.on('connection', (socket) => {
     
     socket.on('supervisor_home', async () => {
         console.log('nel socket.io di supervisor home');
-        let sup_home = {};
-        sup_home.energy_Average = await dbmanager.getEnergyDrain_Average(queryes.influx.timespan.week);
-        sup_home.uptime_Average = await dbmanager.getUptime_Average(queryes.influx.timespan.week);
-        sup_home.water_Average = await dbmanager.getWaterConsumption_Average(queryes.influx.timespan.week);
-        sup_home.energy_Instant = await dbmanager.getEnergyDrain_Instant();
-        sup_home.uptime_Instant = await dbmanager.getUptime_Instant();
-        sup_home.water_Instant = await dbmanager.getWaterConsumption_Instant();
+        let sup_home = await getSupervisorHomeData();        
         console.log('Emitting data...');
         socket.emit('supervisor_data_home', sup_home);
+    });
+
+    socket.on('manutentor_home', async () => {
+        console.log('nel socket.io di manutentor home');
+        let man_home = await getManutentorHomeData();        
+        console.log('Emitting data...');
+        socket.emit('manutentor_data_home', man_home);
     });
 
     socket.emit('instant_energy', [
@@ -156,3 +157,24 @@ server.listen(port, () => {
     console.log("Click me: http://localhost:" + port);
 });
 
+async function getSupervisorHomeData() {
+    let sup_home = {};
+    sup_home.energy_Average = await dbmanager.getEnergyDrain_Average(queryes.influx.timespan.week);
+    sup_home.uptime_Average = await dbmanager.getUptime_Average(queryes.influx.timespan.week);
+    sup_home.water_Average = await dbmanager.getWaterConsumption_Average(queryes.influx.timespan.week);
+    sup_home.energy_Instant = await dbmanager.getEnergyDrain_Instant();
+    sup_home.uptime_Instant = await dbmanager.getUptime_Instant();
+    sup_home.water_Instant = await dbmanager.getWaterConsumption_Instant();
+    sup_home.water_Day_Grouped = await dbmanager.getWaterConsumption_Grouped_Day();
+    sup_home.energy_Day_Grouped = await dbmanager.getEnergyDrain_Grouped_Day();
+
+    return sup_home;
+}
+
+async function getManutentorHomeData() {
+    let tmp = {};
+    tmp.water_level = await dbmanager.getWaterLevel_Grouped();
+    tmp.revolutionxminute = await dbmanager.getRPM_Grouped();
+    tmp.temperature = await dbmanager.getTemperature_Grouped();
+    return tmp;
+}
