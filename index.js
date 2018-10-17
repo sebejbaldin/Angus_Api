@@ -180,8 +180,8 @@ async function getSupervisorHomeData() {
     sup_home.energy_Instant = await dbmanager.getEnergyDrain_Instant();
     sup_home.uptime_Instant = await dbmanager.getUptime_Instant();
     sup_home.water_Instant = await dbmanager.getWaterConsumption_Instant();
-    sup_home.water_Day_Grouped = await dbmanager.getWaterConsumption_Grouped_Day();
-    sup_home.energy_Day_Grouped = await dbmanager.getEnergyDrain_Grouped_Day();
+    //sup_home.water_Day_Grouped = await dbmanager.getWaterConsumption_Grouped_Day();
+    //sup_home.energy_Day_Grouped = await dbmanager.getEnergyDrain_Grouped_Day();
 
     return sup_home;
 }

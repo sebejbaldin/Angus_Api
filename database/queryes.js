@@ -1,15 +1,15 @@
 module.exports = {
     influx: {
-        energyConsumption_Instant: `select value from testdata
+        energyConsumption_Instant: `select sum(value) as value from testdata
         where sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 
-        and time > now() -1s                
+        and time > now() - 24h                
         limit 1`,
-        waterConsumption_Instant: `select value from testdata 
-        where time > now() -1s 
+        waterConsumption_Instant: `select sum(value) as value from testdata 
+        where time > now() - 24h 
         and sensor_id=28 or sensor_id=29 or sensor_id=30
         limit 1`,    
-        uptime_Instant: `select value from testdata        
-        where time > now() -1s  
+        uptime_Instant: `select sum(value) as value from testdata        
+        where time > now() - 24h  
         and sensor_id=27 or sensor_id=24 or sensor_id=21 or sensor_id=18 or sensor_id=15
         limit 1`,  
         waterLevel_Instant_Grouped: `select value from testdata 
@@ -26,7 +26,9 @@ module.exports = {
         and sensor_id=14 or sensor_id=17 or sensor_id=20 or sensor_id=23 or sensor_id=26
         group by tag_sensor_id 
         limit 1`,
-        averageEnergy_Week: 'select mean(*) from seb_sum_e_global',
+        averageEnergy_Week: 'select mean(sum_e) as mean from sum_e_global',
+        uptime_Week: 'select mean(sum_uptime) as mean from sum_u_global',
+        waterConsume_Week: 'select mean(sum_w) as mean from sum_w_global',
         //averageWater_Week: '',
         energyDrainBySensor_Minute_Global: `select sum(value) from testdata 
         where time > now() - 1m 

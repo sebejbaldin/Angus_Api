@@ -109,41 +109,42 @@ exports.getEnergyDrain_Average = async (timespan) => {
         //Try the query and see what return
         console.log(InRes);
         //return InRes[0].mean_sum_e;
+        return InRes[0].mean;
     });
 }
 
 exports.getWaterConsumption_Average = async (timespan) => {
-    return await GetData(undefined, queryes.influx.GetWaterConsuption_Average(timespan), async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.waterConsume_Week, async (MyRes, InRes) => {
         console.log(InRes);
-        //return InRes[0].mean;
+        return InRes[0].mean;
     });
 }
 
 exports.getUptime_Average = async (timespan) => {
-    return await GetData(undefined, queryes.influx.GetUptime_Average(timespan), async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.uptime_Week, async (MyRes, InRes) => {
         console.log(InRes);
-        //return InRes[0].mean;
+        return InRes[0].mean;
     });
 }
 
 exports.getEnergyDrain_Instant = async () => {
     return await GetData(undefined, queryes.influx.energyConsumption_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        //return InRes[0].value;
+        return InRes[0].value;
     });
 }
 
 exports.getWaterConsumption_Instant = async () => {
     return await GetData(undefined, queryes.influx.waterConsumption_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        //return InRes[0].value;
+        return InRes[0].value;
     });
 }
 
 exports.getUptime_Instant = async () => {
     return await GetData(undefined, queryes.influx.uptime_Instant, async (MyRes, InRes) => {
         console.log(InRes);
-        //return InRes[0].value;
+        return InRes[0].value;
     });
 }
 
@@ -154,7 +155,7 @@ exports.getEnergyDrain_Grouped_Day = async () => {
 }
 
 exports.getWaterConsumption_Grouped_Day = async () => {
-    return await GetData(undefined, '', async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.GetWaterConsuption_Total(), async (MyRes, InRes) => {
         console.log(InRes);
     });
 }
