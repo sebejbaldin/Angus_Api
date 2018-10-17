@@ -28,10 +28,22 @@ module.exports = {
         limit 1`,
         averageEnergy_Week: 'select mean(*) from seb_sum_e_global',
         //averageWater_Week: '',
-        energyDrainBySensor_Minute_Global: 'select sum(value) from testdata where time > now() - 1m and sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 group by tag_sensor_id',
-        waterTankLevel_Day_Max: 'select max(value) from testdata where time > now() - 1h and sensor_id=7 or sensor_id=9 or sensor_id=11 group by tag_sensor_id order by time desc',
-        waterTankLevel_Day_Min: 'select min(value) from testdata where time > now() - 1h and sensor_id=7 or sensor_id=9 or sensor_id=11 group by tag_sensor_id order by time desc',
-        GetSensorValue_Instant_Grouped: 'select value from testdata where time > now() group by tag_sensor_id limit 1',
+        energyDrainBySensor_Minute_Global: `select sum(value) from testdata 
+        where time > now() - 1m 
+        and sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 
+        group by tag_sensor_id`,
+        waterTankLevel_FourHour_Max: `select max(value) from testdata 
+        where time > now() - 4h
+        and sensor_id=2 or sensor_id=4 or sensor_id=7 or sensor_id=9 or sensor_id=11 
+        group by tag_sensor_id`,
+        waterTankLevel_FourHour_Min: `select min(value) from testdata 
+        where time > now() - 4h
+        and sensor_id=2 or sensor_id=4 or sensor_id=7 or sensor_id=9 or sensor_id=11 
+        group by tag_sensor_id`,
+        GetSensorValue_Instant_Grouped: `select value from testdata 
+        where time > now() 
+        group by tag_sensor_id 
+        limit 1`,
         timespan: {
             minute: '1m',
             hour: '1h',

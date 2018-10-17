@@ -159,10 +159,10 @@ exports.getWaterConsumption_Grouped_Day = async () => {
     });
 }
 // these three are the query for the manutentor
-exports.getWaterLevel_Grouped = async () => {
-    return await GetData(undefined, queryes.influx.waterLevel_Instant_Grouped, async (MyRes, InRes) => {
+exports.getWaterLevel_Max_Grouped = async () => {
+    return await GetData(undefined, queryes.influx.waterTankLevel_FourHour_Max, async (MyRes, InRes) => {
         console.log(InRes);
-        return InRes;        
+        return InRes;
     });
 }
 

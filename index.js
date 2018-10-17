@@ -189,19 +189,34 @@ async function getSupervisorHomeData() {
 async function getManutentorHomeData() {
     let tmp = {
         pretreatment: {
-            finisher: 0,
-            primer: 0,
-            pretreatment: 0
+            finisher: {
+                max: 0,
+                min:0
+            },
+            primer: {
+                max: 0,
+                min:0
+            },
+            pretreatment: {
+                max: 0,
+                min:0
+            }
         },
         prewashing: {
             temp: 0,
             revolutionxminute: 0,
-            water_level: 0
+            water_level: {
+                max: 0,
+                min:0   
+            }
         },
         washing: {
             temp: 0,
             revolutionxminute: 0,
-            water_level: 0
+            water_level: {
+                max: 0,
+                min:0
+            }
         },
         drying: {
             temp: 0,
@@ -216,14 +231,15 @@ async function getManutentorHomeData() {
             }
         }
     }, raw = {};
-    raw.water = await dbmanager.getWaterLevel_Grouped();
+    raw.water = await dbmanager.getWaterLevel_Max_Grouped();
     raw.temp = await dbmanager.getTemperature_Grouped();
     raw.revol = await dbmanager.getRPM_Grouped();    
-    tmp.pretreatment.finisher = raw.water[0].value;
-    tmp.prewashing.water_level = raw.water[1].value;
-    tmp.washing.water_level = raw.water[2].value;
-    tmp.pretreatment.pretreatment = raw.water[3].value;
-    tmp.pretreatment.primer = raw.water[4].value;
+    //NEED TO REORDER THE ASSIGNATION OF WATER BASED ON THE ORDER OF THE RESPONSE
+    tmp.pretreatment.finisher.max = raw.water[0].max;
+    tmp.prewashing.water_level.max = raw.water[1].max;
+    tmp.washing.water_level.max = raw.water[2].max;
+    tmp.pretreatment.pretreatment.max = raw.water[3].max;
+    tmp.pretreatment.primer.max = raw.water[4].max;
     tmp.prewashing.revolutionxminute = raw.revol[0].value;
     tmp.washing.revolutionxminute = raw.revol[1].value;
     tmp.drying.revolutionxminute = raw.revol[2].value;
