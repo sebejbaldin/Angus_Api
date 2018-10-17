@@ -243,8 +243,8 @@ async function getManutentorHomeData() {
     tmp.prewashing.revolutionxminute = raw.revol[0].value;
     tmp.washing.revolutionxminute = raw.revol[1].value;
     tmp.drying.revolutionxminute = raw.revol[2].value;
-    tmp.storage.engine_one = raw.revol[3].value;
-    tmp.storage.engine_two = raw.revol[4].value;
+    tmp.storage.engine_one.revolutionxminute = raw.revol[3].value;
+    tmp.storage.engine_two.revolutionxminute = raw.revol[4].value;
     tmp.prewashing.temp = raw.temp[0].value;
     tmp.washing.temp = raw.temp[1].value;
     tmp.drying.temp = raw.temp[2].value;
