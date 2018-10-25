@@ -11,6 +11,7 @@ const structController = require('./factory/structure');
 const verifyToken = require('./auth/verifyToken');
 const queryes = require('./database/queryes');
 const ip = require('ip');
+const update_delay_millis = 10000; 
 
 //represent the number of client connected with socket.io
 var userConnected = 0;
@@ -54,39 +55,10 @@ app.get("/api/lastminute", async (req, res) => {
     res.status(200).send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
-/* setInterval(async () => {
-    //io.emit('instant_energy', await dbmanager.getEnergyDrainBySens_Instant());
-    io.emit('instant_energy', [
-        {
-            time: 'now',
-            value: Math.floor(Math.random() * (25000 - 200)) + 200,
-            machine_id: 3,
-            machine_name: 'engine 1'
-        },{
-            time: 'now',
-            value: Math.floor(Math.random() * (25000 - 200)) + 200,
-            machine_id: 3,
-            machine_name: 'engine 2'
-        },{
-            time: 'now',
-            value: Math.floor(Math.random() * (25000 - 200)) + 200,
-            machine_id: 3,
-            machine_name: 'washing'
-        },{
-            time: 'now',
-            value: Math.floor(Math.random() * (25000 - 200)) + 200,
-            machine_id: 3,
-            machine_name: 'dryer'
-        },{
-            time: 'now',
-            value: Math.floor(Math.random() * (25000 - 200)) + 200,
-            machine_id: 3,
-            machine_name: 'pre-washing'
-        }
-    ]);
-    
-
-}, 10000); */
+setInterval(async () => {
+    await getManutentorHomeData();   
+    io.emit('manutentor_data_home', manutentor_response);
+}, update_delay_millis);
 
 // socket.io body
 io.on('connection', (socket) => {
@@ -110,17 +82,17 @@ io.on('connection', (socket) => {
     socket.on('home_run', async (grade) => {
         if (grade == 1) {
             //supervisor
-            console.log('README: supervisor home');
-            let sup_home = await getSupervisorHomeData();
-            console.log('Emitting data...');
-            socket.emit('supervisor_data_home', sup_home);
+            console.log('README: supervisor home');                        
+            socket.emit('supervisor_data_home_energy', await getSupervisorEnergyData());
+            socket.emit('supervisor_data_home_water', await getSupervisorWaterData());
+            socket.emit('supervisor_data_home_uptime', await getSupervisorUptimeData());            
         }
         else if (grade == 2) {
             //manutentor
-            console.log('README: manutentor home');
-            let man_home = await getManutentorHomeData();
+            console.log('README: manutentor home');                        
+            await getManutentorHomeData();
             console.log('Emitting data...');
-            socket.emit('manutentor_data_home', man_home);
+            socket.emit('manutentor_data_home', manutentor_response);                            
         }
     });
 
@@ -161,8 +133,8 @@ io.on('connection', (socket) => {
 // if the request haven't been captured yet, it return a 404 status to the request
 app.get('*', (req, res) => {
     res
-        .status(404)
-        .end('Error 404, page not found.');
+    .status(404)
+    .end('Error 404, page not found.');
 });
 
 // server listening
@@ -186,67 +158,97 @@ async function getSupervisorHomeData() {
     return sup_home;
 }
 
-async function getManutentorHomeData() {
-    let tmp = {
+async function getSupervisorEnergyData() {
+    let tmp = {};
+    tmp.energy_Average = await dbmanager.getEnergyDrain_Average(queryes.influx.timespan.week);
+    tmp.energy_Instant = await dbmanager.getEnergyDrain_Instant();
+    return tmp;
+}
+
+async function getSupervisorWaterData() {
+    let tmp = {};
+    tmp.water_Average = await dbmanager.getWaterConsumption_Average(queryes.influx.timespan.week);
+    tmp.water_Instant = await dbmanager.getWaterConsumption_Instant();   
+    return tmp;
+}
+
+async function getSupervisorUptimeData() {
+    let tmp = {};
+    tmp.uptime_Average = await dbmanager.getUptime_Average(queryes.influx.timespan.week);    
+    tmp.uptime_Instant = await dbmanager.getUptime_Instant();    
+    return tmp;
+}
+var manutentor_response = {
+    update_time: null,
+    pretreatment: {
+        finisher: {
+            max: 0,
+            min:0
+        },
+        primer: {
+            max: 0,
+            min:0
+        },
         pretreatment: {
-            finisher: {
-                max: 0,
-                min:0
-            },
-            primer: {
-                max: 0,
-                min:0
-            },
-            pretreatment: {
-                max: 0,
-                min:0
-            }
-        },
-        prewashing: {
-            temp: 0,
-            revolutionxminute: 0,
-            water_level: {
-                max: 0,
-                min:0   
-            }
-        },
-        washing: {
-            temp: 0,
-            revolutionxminute: 0,
-            water_level: {
-                max: 0,
-                min:0
-            }
-        },
-        drying: {
-            temp: 0,
-            revolutionxminute: 0
-        },
-        storage: {
-            engine_one: {
-                revolutionxminute : 0
-            },
-            engine_two: {
-                revolutionxminute : 0
-            }
+            max: 0,
+            min:0
         }
-    }, raw = {};
+    },
+    prewashing: {
+        temp: 0,
+        revolutionxminute: 0,
+        water_level: {
+            max: 0,
+            min:0   
+        }
+    },
+    washing: {
+        temp: 0,
+        revolutionxminute: 0,
+        water_level: {
+            max: 0,
+            min:0
+        }
+    },
+    drying: {
+        temp: 0,
+        revolutionxminute: 0
+    },
+    storage: {
+        engine_one: {
+            revolutionxminute : 0
+        },
+        engine_two: {
+            revolutionxminute : 0
+        }
+    }
+}
+
+async function getManutentorHomeData() {
+    if (manutentor_response.update_time && new Date().getTime() < (manutentor_response.update_time.getTime() + update_delay_millis )) 
+        return;
+    
+    manutentor_response.update_time = new Date();
+    let raw = {};
     raw.water = await dbmanager.getWaterLevel_Max_Grouped();
     raw.temp = await dbmanager.getTemperature_Grouped();
     raw.revol = await dbmanager.getRPM_Grouped();    
     //NEED TO REORDER THE ASSIGNATION OF WATER BASED ON THE ORDER OF THE RESPONSE
-    tmp.pretreatment.finisher.max = raw.water[0].max;
-    tmp.prewashing.water_level.max = raw.water[1].max;
-    tmp.washing.water_level.max = raw.water[2].max;
-    tmp.pretreatment.pretreatment.max = raw.water[3].max;
-    tmp.pretreatment.primer.max = raw.water[4].max;
-    tmp.prewashing.revolutionxminute = raw.revol[0].value;
-    tmp.washing.revolutionxminute = raw.revol[1].value;
-    tmp.drying.revolutionxminute = raw.revol[2].value;
-    tmp.storage.engine_one.revolutionxminute = raw.revol[3].value;
-    tmp.storage.engine_two.revolutionxminute = raw.revol[4].value;
-    tmp.prewashing.temp = raw.temp[0].value;
-    tmp.washing.temp = raw.temp[1].value;
-    tmp.drying.temp = raw.temp[2].value;
-    return tmp;
+    manutentor_response.pretreatment.finisher.max = raw.water[0].max;
+    manutentor_response.prewashing.water_level.max = raw.water[1].max;
+    manutentor_response.washing.water_level.max = raw.water[2].max;
+    manutentor_response.pretreatment.pretreatment.max = raw.water[3].max;
+    manutentor_response.pretreatment.primer.max = raw.water[4].max;
+    manutentor_response.prewashing.revolutionxminute = raw.revol[0].value;
+    manutentor_response.washing.revolutionxminute = raw.revol[1].value;
+    manutentor_response.drying.revolutionxminute = raw.revol[2].value;
+    manutentor_response.storage.engine_one.revolutionxminute = raw.revol[3].value;
+    manutentor_response.storage.engine_two.revolutionxminute = raw.revol[4].value;
+    manutentor_response.prewashing.temp = raw.temp[0].value;
+    manutentor_response.washing.temp = raw.temp[1].value;
+    manutentor_response.drying.temp = raw.temp[2].value;    
+}
+
+class Manutentor_Home_Result {
+
 }
