@@ -68,5 +68,7 @@ classes.js
 database/dbconn.js
 api.js
 exJSON/
+test1.txt
+.vscode/
 
 # End of https://www.gitignore.io/api/node
