@@ -20,95 +20,34 @@ const influx = new Influx.InfluxDB({
     database: config.influx_config.database
 });
 
-
-exports.getEnergyDrainBySens_Instant = async () => {
-    return await GetData('', queryes.influx.energyDrain_Instant, async (MyRes, InRes) => {
-        let response = [];
-        inrespo = InRes;
-        for (let i = 0; i < 5; i++) {
-            let x = InRes[i];
-            sensors_all.forEach(y => {
-                if (x.tag_sensor_id == y.id)
-                    response.push({
-                        time: x.time,
-                        value: x.value,
-                        machine_name: y.name 
-                    });
-            });
-        }
-        /* inrespo.forEach(x => {
-            sensors_all.forEach(y => {
-                if (x.tag_sensor_id == y.id)
-                    response.push({
-                        time: x.time,
-                        value: x.value,
-                        machine_name: y.name 
-                    });
-            });
-        }); */
-        return response;
-    });
-}
 // i'll comment only the first function of this type because the concept is the same for all
 // for the description of the functions called inside this, scroll down
-exports.getEnergyDrain_Minute_Global = async () => {
-    /* let MyQuery = `select m.name, s.id, s.type from machines m 
-    join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`; */
-    /* let InQuery = `select sum(value) 
-    from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`; */
-    let InQuery = queryes.influx.energyDrain_Minute_Global;
-
+exports.ExampleDatabaseQuery = async () => {    
+    let InfluxQuery = '**some query**';
+    let MySQLQuery = '**another query**';
     // after have prepared the query you call the GetData function in which you pass three arguments
-    // first mysql query, second a influx query, third a function to elaborate the data
-    return await GetData('', InQuery, async (MyRes, InRes) => {
+    // first mysql query, second an influx query, third a function to elaborate the data
+    return await GetData(MySQLQuery, InfluxQuery, async (MySQLRes, InfluxRes) => {
         // what is about to happen is:
         // 1) use the function ReadQueryMySQL using the query passed
-        // 2) same but using the influx function ad influx query
-        // 3) pass to the function providedthe results of the queryes and return the data 
+        // 2) same but using the ReadQueryInfluxDB function with the influx query
+        // 3) pass to the function provided the results of both the query
+        // 4) process the query using the third parameter of the function GetData,
+        // so you provide the function to elaborate both the responses and return what you want
                 
-        // this is what will be do to the data in this case
-        
-    });
-}
-
-exports.getEnergyDrainBySens_Global = async () => {
-    return await GetData('', queryes.influx.energyDrainBySensor_Global, async (MyRes, InRes) => {
-        /* let response = [];
-        inrespo = InRes;
-        for (let i = 0; i < 5; i++) {
-            let x = InRes[i];
-            sensors_all.forEach(y => {
-                if (x.tag_sensor_id == y.id)
-                    response.push({
-                        time: x.time,
-                        value: x.value,
-                        machine_name: y.name 
-                    });
-            });
-        } */
-        /* inrespo.forEach(x => {
-            sensors_all.forEach(y => {
-                if (x.tag_sensor_id == y.id)
-                    response.push({
-                        time: x.time,
-                        value: x.value,
-                        machine_name: y.name 
-                    });
-            });
-        }); */
-        //return response;
-        return InRes;
+        // this is what will be do to the data in this case, for example:
+        let exampleResponse = {
+            mysql_response: MySQLRes,
+            influx_response: InfluxRes
+        }
+        // after have the data processed you can for example return the response or anything other
+        return exampleResponse;
     });
 }
 
 exports.getEnergyDrain_Average = async (timespan) => {
     return await GetData(undefined, queryes.influx.averageEnergy_Week, async (MyRes, InRes) => {
-//  return await GetData(undefined, queryes.influx.GetEnergyConsuption_Average(timespan), async (MyRes, InRes) => {
-        //Try the query and see what return
-        console.log(InRes);
-        //return InRes[0].mean_sum_e;
+        console.log(InRes);        
         return InRes[0].mean;
     });
 }
@@ -149,14 +88,45 @@ exports.getUptime_Instant = async () => {
 }
 
 exports.getEnergyDrain_Grouped_Day = async () => {
-    return await GetData(undefined, '', async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.energyConsumption_Instant_Grouped, async (MyRes, InRes) => {
         console.log(InRes);
-    });
-}
+        let data = [];
+        InRes.forEach(x => {
+            let machine_name = '';
+            sensors_all.forEach(y => {
+                if (x.tag_sensor_id == y.sensor_id) {
+                    machine_name = y.machine_name;                    
+                }
+            });
+            data.push({
+                value: x.value,
+                //sensor_id: x.tag_sensor_id
+                machine_name: machine_name
+                });
+            });
+        return data;
+    });        
+};
+
 
 exports.getWaterConsumption_Grouped_Day = async () => {
-    return await GetData(undefined, queryes.influx.GetWaterConsuption_Total(), async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.waterConsumption_Instant_Grouped, async (MyRes, InRes) => {
         console.log(InRes);
+        let data = [];
+        InRes.forEach(x => {
+            let machine_name = '';
+            sensors_all.forEach(y => {
+                if (x.tag_sensor_id == y.sensor_id) {
+                    machine_name = y.machine_name;                    
+                }
+            });
+            data.push({
+                value: x.value,
+                //sensor_id: x.tag_sensor_id
+                machine_name: machine_name
+                });
+            });
+        return data;
     });
 }
 // these three are the query for the manutentor
@@ -180,98 +150,11 @@ exports.getRPM_Grouped = async () => {
         return InRes;        
     });
 }
-/*
-per il manutentore prendo tutti i dati dei giri e del livello dell'acqua(per sensore), 
-e quelli della temperatura, anche se in teoria sono 3 ma le mockup sono 5
-*/
-
-exports.getEnergyDrainBySens_Minute = async () => {
-    let MyQuery = `select m.name, s.id, s.type from machines m 
-    join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`;
-    //let InQuery = queryes.influx.energyDrainBySensor_Minute_Global;
-    let InQuery = `select sum(value) 
-    from (select * from testdata group by tag_sensor_id )
-    where time > now() - 1m group by tag_sensor_id`;
-
-    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
-
-        let obj = [];
-        MyRes.forEach(element => {
-            let idSens = element.id;
-            InRes.forEach(item => {
-                if (item.tag_sensor_id == idSens) {
-                    obj.push({
-                        name: element.name,
-                        value: item.sum
-                    });
-                }
-            })
-        });
-        console.log(obj);
-        return obj;
-
-    });
-}
-
-exports.getInstantEnergyDrainForSensor = async () => {
-    let MyQuery = `select * from sensors`;
-    let InQuery = `select * from testdata group by tag_sensor_id order by time desc limit 1`;
-    //let InQuery = queryes.influx.
-
-    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
-
-        let obj = [];
-        InRes.forEach(m => {
-            MyRes.forEach(k => {
-                if (m.sensor_id == k.id) {
-                    obj.push({
-                        time: m.time,
-                        id: m.id,
-                        sensor_id: m.sensor_id,
-                        value: m.value,
-                        sensor_type: k.type,
-                        machine_id: k.machine_id
-                    });
-                }
-            });
-        });
-        return obj;
-
-    });
-}
-
-exports.getInstantByMachine = async () => {
-    let MyQuery = `select m.name, s.id, s.type from machines m 
-    join sensors s on s.machine_id=m.id 
-    where s.type='corrente assorbita'`;
-    let InQuery = queryes.influx.energyDrain_Instant;
-
-    return await GetData(MyQuery, InQuery, async (MyRes, InRes) => {
-
-        let obj = [];
-        MyRes.forEach(element => {
-            let idSens = element.id;
-            InRes.forEach(item => {
-                if (item.sensor_id === idSens) {
-                    obj.push({
-                        name: element.name,
-                        value: item.value
-                    });
-                }
-            })
-        });
-        console.log(obj);
-        return obj;
-    });
-}
 
 exports.tryQueryInflux = async () => {
-    
-    return await GetData("", queryes.influx.GetQueryBySensor_Single(15), async (MyRes, InRes) => {
+    return await GetData(undefined, queryes.influx.averageEnergy_Week, async (MyRes, InRes) => {
         return InRes;
     });
-    //res.send(InfluxResult);
 }
 
 exports.insertMeasurement = (data) => {
@@ -399,9 +282,6 @@ function queryIsValid(query) {
         if (string.length > 0)
             return true;
 
-        
-
-
         return false;
     } catch (e) {
         console.log(e);
@@ -409,22 +289,15 @@ function queryIsValid(query) {
     }
 }
 
-let conn = mysql.createConnection(configMSSQL);            
-conn.connect();
-conn.query(`select m.name, s.machine_id, s.id, s.type 
-    from machines m 
-    join sensors s 
-    on s.machine_id=m.id`, (err, resultMy, fields) => {
-    conn.end();
-    if (err) {
-        console.log(err);        
-    }
-    
-    //console.log(resultMy); //undefined
+await GetData(`select m.name as machine_name, s.machine_id as machine_id, s.id as sensor_id, s.type as sensor_type 
+from machines m 
+join sensors s 
+on s.machine_id=m.id`, undefined, async (MyRes, InRes) => {
     try {
-    resultMy.forEach(x => {
-        sensors_all.push(x);
-    });
-    }catch{   
-    }    
-});        
+        MyRes.forEach(x => {
+            sensors_all.push(x);
+        });
+    } catch(err) {   
+        throw err;
+    }
+});

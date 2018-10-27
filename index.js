@@ -1,7 +1,7 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const server = require("http").Server(app);
-const io = require("socket.io")(server);
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -19,10 +19,10 @@ var userConnected = 0;
 app.use(cors());
 app.use(bodyParser.json());
 // Added authentication with jwt
-app.use("/api/auth", authController);
+app.use('/api/auth', authController);
 
 // Added strucutre
-app.use("/api/factory", structController);
+app.use('/api/factory', structController);
 
 // middleware that check if the user is authenticated
 // if the user isn't authenticated it block the request, otherwise let the request to be processed
@@ -36,29 +36,29 @@ app.use((req, res, next) => {
 }); */
 
 // post api to insert new measurements
-app.post("/api/measure", (req, res) => {
+app.post('/api/measure', (req, res) => {
     if (req.body != null) {
         dbmanager.insertMeasurement(res, req.body);
     } else {
-        res.end("No data received.");
+        res.end('No data received.');
     }
 });
 
-app.get("/api/try", async (req, res) => {
+app.get('/api/try', async (req, res) => {
     let obj = await dbmanager.getEnergyDrainBySens_Instant();
     console.log(obj);
     if (obj != undefined) res.status(200).send(obj);
     else res.status(500).send(obj);
 });
 
-app.get("/api/lastminute", async (req, res) => {
+app.get('/api/lastminute', async (req, res) => {
     res.status(200).send(await dbmanager.getEnergyLastMinuteBySens());
 });
 
-setInterval(async () => {
-    await getManutentorHomeData();   
+/* setInterval(async () => {
+    await getManutentorHomeData();
     io.emit('manutentor_data_home', manutentor_response);
-}, update_delay_millis);
+}, update_delay_millis); */
 
 // socket.io body
 io.on('connection', (socket) => {
@@ -85,7 +85,8 @@ io.on('connection', (socket) => {
             console.log('README: supervisor home');                        
             socket.emit('supervisor_data_home_energy', await getSupervisorEnergyData());
             socket.emit('supervisor_data_home_water', await getSupervisorWaterData());
-            socket.emit('supervisor_data_home_uptime', await getSupervisorUptimeData());            
+            socket.emit('supervisor_data_home_uptime', await getSupervisorUptimeData()); 
+            socket.emit('supervisor_data_aero_graphs', await getSupervisorAeroGraphsData());          
         }
         else if (grade == 2) {
             //manutentor
@@ -140,8 +141,8 @@ app.get('*', (req, res) => {
 // server listening
 const port = 8081;
 server.listen(port, () => {
-    console.log("Click me: http://" + ip.address() + ":" + port);
-    console.log("Click me: http://localhost:" + port);
+    console.log('Click me: http://' + ip.address() + ':' + port);
+    console.log('Click me: http://localhost:' + port);
 });
 
 async function getSupervisorHomeData() {
@@ -152,8 +153,8 @@ async function getSupervisorHomeData() {
     sup_home.energy_Instant = await dbmanager.getEnergyDrain_Instant();
     sup_home.uptime_Instant = await dbmanager.getUptime_Instant();
     sup_home.water_Instant = await dbmanager.getWaterConsumption_Instant();
-    //sup_home.water_Day_Grouped = await dbmanager.getWaterConsumption_Grouped_Day();
-    //sup_home.energy_Day_Grouped = await dbmanager.getEnergyDrain_Grouped_Day();
+    sup_home.water_Day_Grouped = await dbmanager.getWaterConsumption_Grouped_Day();
+    sup_home.energy_Day_Grouped = await dbmanager.getEnergyDrain_Grouped_Day();
 
     return sup_home;
 }
@@ -178,6 +179,19 @@ async function getSupervisorUptimeData() {
     tmp.uptime_Instant = await dbmanager.getUptime_Instant();    
     return tmp;
 }
+
+async function getSupervisorAeroGraphsData() {
+    let tmp = {
+        energy: await dbmanager.getEnergyDrain_Grouped_Day(),
+        water: await dbmanager.getWaterConsumption_Grouped_Day()
+    }
+    return tmp;
+}
+
+async function getSupervisorEnergyData_Grouped() {
+
+}
+
 var manutentor_response = {
     update_time: null,
     pretreatment: {

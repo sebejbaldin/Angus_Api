@@ -1,5 +1,13 @@
 module.exports = {
     influx: {
+        energyConsumption_Instant_Grouped: `select sum(value) as value from testdata 
+        where time > now() - 24h 
+        and sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 
+        group by tag_sensor_id`,
+        waterConsumption_Instant_Grouped: `select sum(value) as value from testdata 
+        where time > now() - 24h 
+        and sensor_id=28 or sensor_id=29 or sensor_id=30 
+        group by tag_sensor_id`,
         energyConsumption_Instant: `select sum(value) as value from testdata
         where sensor_id=13 or sensor_id=16 or sensor_id=19 or sensor_id=22 or sensor_id=25 
         and time > now() - 24h                
