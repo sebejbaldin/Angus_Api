@@ -289,7 +289,7 @@ function queryIsValid(query) {
     }
 }
 
-await GetData(`select m.name as machine_name, s.machine_id as machine_id, s.id as sensor_id, s.type as sensor_type 
+GetData(`select m.name as machine_name, s.machine_id as machine_id, s.id as sensor_id, s.type as sensor_type 
 from machines m 
 join sensors s 
 on s.machine_id=m.id`, undefined, async (MyRes, InRes) => {
