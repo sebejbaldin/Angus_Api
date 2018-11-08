@@ -138,13 +138,6 @@ app.get('*', (req, res) => {
     .end('Error 404, page not found.');
 });
 
-// server listening
-const port = 8081;
-server.listen(port, () => {
-    console.log('Click me: http://' + ip.address() + ':' + port);
-    console.log('Click me: http://localhost:' + port);
-});
-
 async function getSupervisorHomeData() {
     let sup_home = {};
     sup_home.energy_Average = await dbmanager.getEnergyDrain_Average(queryes.influx.timespan.week);
@@ -263,6 +256,9 @@ async function getManutentorHomeData() {
     manutentor_response.drying.temp = raw.temp[2].value;    
 }
 
-class Manutentor_Home_Result {
-
-}
+// server listening
+const port = 8081;
+server.listen(port, () => {
+    console.log('Click me: http://' + ip.address() + ':' + port);
+    console.log('Click me: http://localhost:' + port);
+});
